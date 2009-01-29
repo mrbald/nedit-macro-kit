@@ -1,0 +1,690 @@
+#########################################################
+# Frank Perbet - 2002/04/14                             #
+# object: expander                                      #
+#########################################################
+
+
+# get the current line
+define mk_exp_get_line
+{
+	begin_line=search("^",$cursor,"backward","regex")
+	end_line=search("$",$cursor,"forward","regex")
+	if (end_line==-1) end_line=$text_length
+	
+	res["line"]=get_range(begin_line,end_line)
+	res["begin"]=begin_line
+	res["length"]=end_line-begin_line
+	res["rel_cursor"]=$cursor-begin_line
+	
+	return res
+}
+
+# Add structure
+# $1 line to parse
+# $2 blank
+define mk_process_expand
+{
+	res["exp_str"]=""
+	res["cursor_pos"]=-1
+	res["save_as"]=""
+	res["lang"]=""
+	
+	if($n_args!=1)
+	{
+		dialog("expander.nm: mk_process_expand: wrong numbers of arguments.")
+		return res
+	}
+	
+	# get info
+	blank=$1["blank"]
+	parse_line=$1["exp_line"]
+	clip=clipboard_to_string()
+	new_line_test= $1["nl_test"]
+
+	#init
+	result=""
+	save_as_filename=""
+	new_language=""
+	cursor_position=-1
+	param=$empty_array
+	tabulation=mk_tab()
+		
+	#looking for \?
+	old_index=0
+	index=search_string(parse_line,"\\",old_index)
+	while(index!=-1)
+	{
+		#init add. It is use to jump to the next \
+		add=-1
+		result = result substring(parse_line,old_index,index)
+		char=substring(parse_line,index+1,index+2)
+		
+		# perform new line
+		if(char=="n")
+		{
+			result = result "\n"
+			add=2
+		}
+		# perform new line and blank
+		else if(char=="N")
+		{
+			add=2
+			if((result!="") || (!new_line_test)) result = result "\n" blank
+		}
+		# perform tabulation
+		else if(char=="t")
+		{
+			result = result tabulation
+			add=2
+		}
+		# perform new line and blank
+		else if(char=="T")
+		{
+			result = result blank
+			add=2
+			
+		}
+		# cursor position
+		else if(char=="!")
+		{
+			if (cursor_position==-1) cursor_position=length(result)
+			add=2
+		}
+		# char \
+		else if((char=="\\") || (char==")") || (char=="("))
+		{
+			result = result char
+			add=2
+		}
+		# perform clipboard
+		else if(char=="c")
+		{
+			result = result clip
+			add=2
+		}
+		# perform clipboard and indent
+		else if(char=="C")
+		{
+			result = result replace_in_string(clip,"^",tabulation,"regex")
+			add=2
+		}
+		# perform backspace
+		else if(char=="d")
+		{
+			l=length(result)
+			if(l>0) result = substring(result,0,l-1)
+			add=2
+		}
+		# perform backspace
+		else if(char=="x")
+		{
+			add=2
+		}
+		# process parameters
+		else if(search_string(char,"[0-9]",0,"regex")==0)
+		{
+			#match begin and end
+			beg=search_string(parse_line,"\\((.+?)\\)",index+2,"regex")
+			end=$search_end
+
+			if(beg==index+2)
+			{
+				if( char in param )
+				{
+					dialog("Expand: parameter allready define: " char ".")
+					return res
+				}
+				else
+				{
+					str_comment=substring(parse_line,beg+1,end-1)
+					if (str_comment=="") str_comment = "Parameter " char ":"
+					strtmp=string_dialog(str_comment,"ok","dismiss")
+					if($string_dialog_button!=1) return res
+					param[char]=strtmp
+					
+					add=2+end-beg
+				}
+			}
+			else
+			{
+				if( char in param )
+				{
+					result = result param[char]
+					add=2
+				}
+				else
+				{
+					dialog("Expand: Unknow parameter: " char ".")
+					return res
+				}
+			}
+		}
+		# read a file
+		else if( (char=="f") || (char=="F") )
+		{
+			#match
+			beg=search_string(parse_line,"\\((.+?)\\)",index+2,"regex")
+			end=$search_end
+			
+			#insert string
+			if(beg==index+2)
+			{
+				filename=mk_filename(substring(parse_line,beg+1,end-1),$expander_dir)
+				out=read_file(filename)
+				if(char=="F") out=replace_in_string(str_out,"^",tabulation,"regex")
+				if (out != "")
+				{
+					add=0
+					parse_line=substring(parse_line,0,index) out substring(parse_line,end,length(parse_line))
+				}
+				#file does not exist
+				else
+				{
+					dialog("Expand: error reading file: " filename)
+					return res
+				}
+			}
+			#syntax error
+			else
+			{
+				dialog("Expand: syntax error after \\" char ".")
+				return res
+			}
+		}
+		# perform unix command
+		else if(char=="u")
+		{
+			# match
+			beg=search_string(parse_line,"\\((.+?)\\)",index+2,"regex")
+			end=$search_end
+			# execute command
+			if(beg==index+2)
+			{
+				command=substring(parse_line,beg+1,end-1)
+				out=mk_shell_command(command)
+				add=2+end-beg
+				result = result out
+			}
+			else
+			{
+				dialog("Expand: syntax error after \\" char ".")
+				return res
+			}
+		}
+		# new language
+		else if(char=="l")
+		{
+			# match
+			beg=search_string(parse_line,"\\((.+?)\\)",index+2,"regex")
+			end=$search_end
+			# execute command
+			if(beg==index+2)
+			{
+				new_language=substring(parse_line,beg+1,end-1)
+				add=2+end-beg
+			}
+			else
+			{
+				dialog("Expand: syntax error after \\" char ".")
+				return res
+			}
+		}
+		# save file
+		else if(char=="s")
+		{
+			# match
+			beg=search_string(parse_line,"\\((.+?)\\)",index+2,"regex")
+			end=$search_end
+			
+			# save
+			if(beg==index+2)
+			{
+				filename=substring(parse_line,beg+1,end-1)
+				
+				n=search_string(filename,"\\\\[0-9]",0,"regex")
+				while (n!=-1)
+				{
+					char=substring(filename,n+1,n+2)
+					if( char in param )
+					{
+						filename = substring(filename,0,n) param[char] substring(filename,n+2,length(filename))
+						n=search_string(filename,"\\\\[0-9]",n+length(param[char]),"regex")
+					}
+					else
+					{
+						dialog("Expand: Unknow parameter: " char ".")
+						return res
+					}
+				}
+
+				add=2+end-beg
+				save_as_filename=filename
+			}
+			else
+			{
+				dialog("Expand: syntax error after \\" char ".")
+				return res
+			}
+		}
+		# error
+		else
+		{
+			dialog("Expand: Unkown escape character: " char)
+			return res
+		}
+		
+		# if no add has been set, this is a stupid error	
+		if(add==-1)
+		{
+			dialog("Error in expander.nm...")
+			return res
+		}
+		
+		#next loop
+		old_index=index+add
+		index=search_string(parse_line,"\\",old_index)
+	}
+	
+	# add the end of parse line
+	result = result substring(parse_line,old_index,length(parse_line))
+	# if no cursor position has been specified, place the cursor at the end of the line
+	if(cursor_position==-1) cursor_position=length(result)
+	
+	# result:
+	res["exp_str"]=result
+	res["cursor_pos"]=cursor_position
+	res["save_as"]=save_as_filename
+	res["lang"]=new_language
+	
+	return res
+}
+
+# $1 is the shorcut
+# return the expander line
+# ex: mk_shell_command("di") -> dialog(\!)
+define mk_expander_get_line
+{
+	#all possible line:
+	shortcut_list = mk_exp_load_language("general") mk_exp_load_language("template") mk_exp_load_language($language_mode)
+
+	# create a lookfor string:
+	add=""
+	if(substring($1,0,1)=="#") add = "[\\\\]"
+	tmp_shortcut=mk_literal($1)
+	lookfor="^\\s*" add tmp_shortcut "="
+	
+	# lookfor the shortcut:
+	beg_exp_line=search_string(shortcut_list,lookfor,0,"regex")
+	if(beg_exp_line==-1) return ""
+	end_exp_line=$search_end
+
+	#get exp line
+	return substring(shortcut_list, end_exp_line, search_string(shortcut_list, "$", end_exp_line, "regex"))
+}
+
+# find the shortcut which is going to be replace
+# and delete it in the current window
+define mk_load_expander
+{
+	# length of the replacement
+	res["replace_length"]=0
+	# shortcut
+	res["shorcut"]=""
+	# expander line (main result)
+	res["exp_line"]=""
+	# blank at the begin of the line
+	res["blank"]=""
+	# beginning of shorcut
+	res["beg_shortcut"]=0
+	# is the line empty??
+	res["nl_test"]=0
+	
+	# check that the cursor is within the line
+	if( ($1["rel_cursor"]<0) || ($1["rel_cursor"]>$1["length"]) )
+	{
+		dialog("bug in mk_load_expander")
+		return
+	}
+	
+	info_line=$1
+	
+	if($n_args==1)
+	{
+		line_beg=substring(info_line["line"],0,info_line["rel_cursor"])
+		line_end=substring(info_line["line"],info_line["rel_cursor"],info_line["length"])
+		
+		# a return is inserted at the begin of the line (to avoid the use of ^ in the regex)
+		tmp_line_beg="\n" line_beg
+		
+		#look for the negative look
+		beg_neg_look = search_string(tmp_line_beg,$expander_negative_regex,length(tmp_line_beg),"regex","backward")
+		if(beg_neg_look==-1) return res
+		end_neg_look=$search_end
+		neg_look = substring(tmp_line_beg,beg_neg_look,end_neg_look)
+		neg_look = replace_in_string(neg_look,$expander_negative_regex,"\\1","regex")
+
+		# shortcut:
+		res["shorcut"] = substring(tmp_line_beg,end_neg_look,length(tmp_line_beg))
+		# size of the string which is going to be suppressed
+		res["replace_length"] = length(res["shorcut"])+(end_neg_look-beg_neg_look)-length(neg_look)
+		# line update
+		info_line["line"] = substring(line_beg,0,length(line_beg)-res["replace_length"]) line_end
+		
+		res["exp_line"] = mk_expander_get_line(res["shorcut"])
+		if(res["exp_line"] == "") return res
+	}
+	else if($n_args==2)
+	{
+		res["exp_line"]=$2
+		line_beg=substring(info_line["line"],0,info_line["rel_cursor"])
+	}
+	else
+	{
+		dialog("mk_load_expander: wrong number of arguments")
+		return
+	}
+	
+	#store the relative begin of the shortcut
+	res["beg_shortcut"]=info_line["rel_cursor"]-res["replace_length"]
+	
+	# find blank
+	beg_blank=search_string(line_beg,"^\\s+",0,"regex")
+	if (beg_blank==0)
+	{
+		end_blank=$search_end
+		if ( end_blank>info_line["rel_cursor"] ) end_blank=info_line["rel_cursor"]
+		res["blank"]=substring(info_line["line"],0,end_blank)
+		res["nl_test"]=(end_blank==res["beg_shortcut"])
+	}
+	else
+	{
+		res["nl_test"]=(res["beg_shortcut"]==0)
+	}
+	
+	return res
+}
+
+# load the block of a langage
+define mk_exp_load_language
+{
+	beg_title=search_string($expander_data,$1 ":",0,"literal")
+	end_title=$search_end
+	if (beg_title==-1) return ""
+	if (search_string($expander_data,"^",beg_title,"regex","backward")!=beg_title)
+	{
+		dialog("Expander: language " $1 " not found in " $expander_file )
+		return ""
+	}
+	first_acco=search_string($expander_data,"(?n\\s*)^\\{",end_title,"regex")
+	end_first_acco = $search_end
+	if (first_acco!=end_title)
+	{
+		dialog("Expander:Syntax error in " $expander_file ": invalid block for language " $1)
+		return ""
+	}
+	second_acco=search_string($expander_data,"^\\}",end_first_acco+1,"regex")
+	if (second_acco==-1)
+	{
+		dialog("Expander:Syntax error in " $expander_file ": invalid block for language " $1)
+		return ""
+	}
+	block=substring($expander_data,end_first_acco+1,second_acco)
+	block_tmp=replace_in_string(block,"^\\s*#.*$\n","","regex")
+	if (block_tmp!="") block=block_tmp
+	
+	return block
+}
+
+# main function
+# if no argument: check shorcut in line
+# if an argument is provided, use it as an expand line
+define mk_expand
+{
+	if($n_args>=2)
+	{
+		dialog("expander.nm: expander: wrong number of arguments.")
+		return
+	}
+	
+	$expander_data = read_file($expander_file)
+	current_line = mk_exp_get_line()
+	
+	if($n_args==0)
+	{
+		exp_line=mk_load_expander(current_line)
+		if (exp_line["shorcut"]!="")
+		{
+			if(exp_line["exp_line"]=="")
+			{
+				return ""
+			}
+		}
+		else
+		{
+			return ""
+		}
+	}
+	else if($n_args==1)
+	{
+		exp_line=mk_load_expander(current_line,$1)
+	}
+	
+	#process expand
+	res=mk_process_expand(exp_line)
+	if(res["cursor_pos"]==-1) return
+	
+	
+	#insert result
+	isEmpty=($text_length==exp_line["replace_length"])
+	pos=current_line["begin"]+exp_line["beg_shortcut"]
+	replace_range(pos,pos+exp_line["replace_length"],res["exp_str"])
+	set_cursor_pos(pos+res["cursor_pos"])
+	
+	
+	# try to save if the buffer is empty
+	path=$file_path
+	if(path=="") path=mk_action_path()
+	if( (res["save_as"]!="") && (isEmpty) && mk_is_untitled())
+	{
+		filename=mk_filename(res["save_as"],path)
+		if(filename!="")
+		{
+			test=mk_test_file(filename)
+			if(test=="")
+			{
+				save_as(filename)
+			}
+			else
+			{
+				n=dialog(filename " allready exist. Override?","no","yes")
+				if(n==2)
+				{
+					save_as(filename)
+				}
+			}
+		}
+	}
+	
+	#new language
+	if(res["lang"]!="")
+	{
+		set_language_mode(res["lang"])
+	}
+}
+
+# add block and indent
+define mk_add_block
+{
+	if($n_args!=2) return
+	
+	if($selection_start!=-1)
+	{
+		cut_clipboard()
+		mk_expand("\\N" $1 "\\N\\C\\N" $2)
+	}
+	else
+	{
+		if(search("\\S|$",$cursor,"regex") != search("$",$cursor,"regex"))
+			end_of_line()
+		mk_expand("\\N" $1 "\\N\\t\\!\\N" $2)
+	}
+}
+
+# add block and indent
+define mk_add_expstring
+{
+	if($n_args>0)
+	{
+		if ($1=="dialog")
+		{
+			$last_exp_str=""
+		}
+		else
+		{
+			$last_exp_str=$1
+		}
+	}
+	
+	if($last_exp_str=="")
+	{
+		str=string_dialog("Enter expander shorcut:", "Shortcut", "Expander line", "Cancel")
+		if(str=="") return
+		
+		if ($string_dialog_button==1)
+		{
+			$last_exp_str=mk_expander_get_line(str)
+			if($last_exp_str=="")
+			{
+				dialog("wrong shortcut")
+				return
+			}
+		}
+		else if ($string_dialog_button==2)
+		{
+			$last_exp_str=str
+		}
+		else
+		{
+			return
+		}
+	}
+	
+	if($selection_start!=-1) sel=1
+	else sel=0
+	
+	if(sel) cut_clipboard()
+	mk_expand($last_exp_str)
+	if(sel) paste_clipboard()
+}
+
+# open the expander.data file
+define mk_open_expander_file
+{
+	mk_open_file($expander_file)
+}
+
+#create a template file
+define mk_template_file
+{
+	$expander_data = read_file($expander_file)
+	template_data=mk_exp_load_language("template")
+	list_shorcut=replace_in_string(template_data,"^\\s*(\\S+?)=.*$","\\1","regex")
+	choice=list_dialog("Choose template:",list_shorcut,"create","dismiss")
+	if(choice=="") return
+	
+	# create a lookfor string:
+	sc=replace_in_string(choice,".","[&]","regex")
+	if(search_string(sc,"[^]",0)!=-1)
+		sc=replace_in_string(sc,"[^]","\\^")
+	lookfor="(?n.*)^\\s*" sc"=(.*)$(?n.*)"
+	exp_line=replace_in_string(template_data,lookfor,"\\1","regex")
+	if(exp_line=="") return
+
+	info["replace_length"]=0
+	info["shorcut"]=choice
+	info["exp_line"]=exp_line
+	info["blank"]=""
+	info["beg_shortcut"]=""
+	info["nl_test"]=0
+
+	res=mk_process_expand(info)
+
+	if(res["exp_str"]=="")
+	{
+		return
+	}
+
+	
+	# create new file if the actual one is not empty
+	if($text_length>0)
+	{
+		new()
+		focus_window("last")
+		if($text_length>0)
+		{
+			dialog("expander bug: Cannot create new life...")
+			return
+		}
+	}
+
+	raise_window()
+
+	#insert string
+	insert_string(res["exp_str"])
+	if(res["cursor_pos"]!=-1)
+		set_cursor_pos(res["cursor_pos"])
+
+	#save:
+	path=$file_path
+	if(path=="") path=mk_action_path()
+	if(res["save_as"]!="")
+	{
+		filename=mk_filename(res["save_as"],path)
+		if(filename!="")
+		{
+			test=mk_test_file(filename)
+			if(test=="")
+			{
+				save_as(filename)
+			}
+			else
+			{
+				n=dialog(filename " allready exist. Override?","no","yes")
+				if(n==2)
+				{
+					save_as(filename)
+				}
+			}
+		}
+	}
+
+	#new language
+	if(res["lang"]!="")
+	{
+		set_language_mode(res["lang"])
+	}
+}
+
+# reload the expander.data file
+define mk_init_expand
+{
+	$last_exp_str=""
+	# read the content of .nedit_projects.data
+	$expander_dir = mk_pathname("./customize/expander",$MK_ENV_VAR["NEDIT_MK"])
+	$expander_file = mk_filename("./expander.data",$expander_dir)
+	$expander_data = read_file($expander_file)
+	
+	# negative matching (use parenthesis to supress the character you want to keep)
+	$expander_negative_regex = "(\\s|\\n|[\\[\\]\"{}()';:,.`=])|(?:\\\\)"
+	# shorcut matching (use parenthesis around shortcut)
+	$expander_positive_regex = "\\S+"
+	
+	
+	if($read_status==0)
+	{
+		mk_add_error_line("Warning: expander.nm: cannot open " $expander_file)
+	}
+}
+
+#let's go
+mk_init_expand()

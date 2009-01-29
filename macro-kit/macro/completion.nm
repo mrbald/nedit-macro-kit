@@ -1,0 +1,406 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: completion                             #
+##################################################
+
+
+# add a new word to the list of possible completion
+define mk_comp_add_unique_word
+{
+	n=search_string($mk_comp_match_list,$1 "\n" ,0,"case")
+	if(n==0) return
+	if(substring($mk_comp_match_list,n-1,n)=="\n") return
+	
+	$mk_comp_count++
+	$mk_comp_match_list = $mk_comp_match_list $1 "\n"
+}
+
+# add a new word to the list of possible completion
+define mk_comp_add_word
+{
+	$mk_comp_count++
+	$mk_comp_match_list = $mk_comp_match_list $1 "\n"
+}
+
+# init for new match_pos
+define mk_comp_match_init
+{
+	$mk_comp_beg_of_word=$1
+	$mk_comp_beg_of_word_pos=$2
+	$mk_comp_end_of_word_pos=-1
+	$mk_comp_count=0
+	$mk_comp_match_index=-1
+	$mk_comp_match_list=""
+}
+
+
+# arguments comparason
+define mk_comp_equal_args
+{
+	for (k in $mk_comp_args_list1)
+	{
+		if($1[k]!=$mk_comp_args_list1[k]) return 0
+	}
+	return 1
+}
+
+# check the state of completion:
+# return:
+# 		1 new match
+#		0 next match
+define mk_comp_is_new_match
+{
+	tmp=""
+	if($mk_comp_beg_of_word_pos!=-1)
+	{
+		tmp=get_range($mk_comp_beg_of_word_pos,$mk_comp_beg_of_word_pos+length($mk_comp_beg_of_word))
+	}
+	
+	# new search
+	if ( ($mk_comp_end_of_word_pos!=$cursor) || (tmp!=$mk_comp_beg_of_word))	
+	{
+		beg_line=beg_of_line_pos()
+		str=get_range(beg_line,$cursor)
+		beg_of_word_pos=search_string(str,$mk_comp_lookfor "$",0,"regex")
+		if(beg_of_word_pos==-1) return -1
+		beg_of_word=substring(str,beg_of_word_pos,$search_end)
+		beg_of_word_pos=beg_line+beg_of_word_pos
+		
+		mk_comp_match_init(beg_of_word,beg_of_word_pos)
+		return 1
+	}
+	# next match
+	else
+	{
+		test = mk_comp_equal_args($1)
+		if ( test )
+		{
+			return 0
+		}
+		else
+		{
+			mk_comp_match_init($mk_comp_beg_of_word,$mk_comp_beg_of_word_pos)
+			return 1
+		}
+	}
+}
+
+# add the possible completion which are in the current window
+define mk_add_win_completion
+{
+	$mk_comp_count=0
+	
+	# loop from the cursor to the begin of the window text
+	match_pos=$mk_comp_beg_of_word_pos
+	match_pos=search($mk_comp_beg_of_word,match_pos - 1,"case","backward")
+	end=$search_end
+	while( (match_pos!=-1) && ($mk_comp_count<$mk_comp_max) )
+	{
+		c="\n"
+		if(match_pos>0) c=get_range(match_pos-1,match_pos)
+		if (search_string(c,$mk_comp_beg_win_regex,0,"regex")==0)
+		{
+			n=search($mk_comp_end_win_regex,end,"regex")
+			if(n==end)
+			{
+				word=$mk_comp_beg_of_word get_range(n,$search_end)
+				mk_comp_add_unique_word(word)
+			}
+		}
+		match_pos=search($mk_comp_beg_of_word,match_pos-1,"case","backward")
+		end=$search_end
+	}
+	
+	# loop from the cursor to the begin of the window text
+	match_pos=$mk_comp_beg_of_word_pos
+	match_pos=search($mk_comp_beg_of_word,match_pos + 1,"case","forward")
+	end=$search_end
+	while( (match_pos!=-1) && ($mk_comp_count<$mk_comp_max) )
+	{
+		c="\n"
+		if(match_pos>0)c=get_range(match_pos-1,match_pos)
+		if (search_string(c,$mk_comp_beg_win_regex,0,"regex")==0)
+		{
+			n=search($mk_comp_end_win_regex,end,"regex")
+			if(n==end)
+			{
+				word=$mk_comp_beg_of_word get_range(n,$search_end)
+				mk_comp_add_unique_word(word)
+			}
+		}
+		match_pos=search($mk_comp_beg_of_word,match_pos+1,"case","forward")
+		end=$search_end
+	}
+	
+	return $mk_comp_count
+}
+
+
+# add possible completion in the given string $1
+# just look at the words at beginning of line
+# $1 -> "unique"
+define mk_add_string_completion
+{
+	unique=0
+	if($n_args>0)
+	{
+		if($1=="unique") unique=1
+	}
+	
+	$mk_comp_count=0
+	look_for="^" $mk_comp_beg_of_word $mk_comp_end_string_regex
+
+	# loop in the string:
+	match_pos=search_string($mk_comp_input,look_for,0,"regex","forward")
+	end=$search_end
+	while((match_pos!=-1) && ($mk_comp_count<$mk_comp_max))
+	{
+		word=substring($mk_comp_input,match_pos,end)
+		if(unique==1) mk_comp_add_unique_word(word)
+		else mk_comp_add_word(word)
+		match_pos=search_string($mk_comp_input,look_for,end,"regex","forward")
+		end=$search_end
+	}
+	
+	return $mk_comp_count
+}
+
+# write the next completion word
+define mk_next_completion_write
+{
+	direction=1
+	if($n_args==1)
+	{
+		if($1==-1)
+		{
+			direction=-1
+		}
+	}
+
+	if (length($mk_comp_match_list)>1)
+	{
+		if($mk_comp_match_index==-1)
+		{
+			$mk_comp_match_index=0
+		}
+		else
+		{
+			if(direction==-1)
+			{
+				if($mk_comp_match_index==0) $mk_comp_match_index=length($mk_comp_match_list)-1
+				n=search_string($mk_comp_match_list,"\n", $mk_comp_match_index-2,"case","backward")+1
+				$mk_comp_match_index=n
+			}
+			else
+			{
+				n=search_string($mk_comp_match_list,"\n", $mk_comp_match_index,"case","forward")+1
+				if(n==length($mk_comp_match_list)) $mk_comp_match_index=0
+				else $mk_comp_match_index=n
+			}
+		}
+		
+		n=search_string($mk_comp_match_list,"\n",$mk_comp_match_index,"case","forward")
+		if(n==-1)
+		{
+			dialog("debug mk_next_completion_write")
+		}
+		word=substring($mk_comp_match_list,$mk_comp_match_index,n)
+		
+		undo()
+		replace_range($mk_comp_beg_of_word_pos,$cursor,word)
+		$mk_comp_end_of_word_pos=$mk_comp_beg_of_word_pos+length(word)
+		set_cursor_pos($mk_comp_end_of_word_pos)
+	}
+}
+
+# open dialog with the possible completion
+define mk_completion_dialog
+{
+	save_cursor=$cursor
+
+	set_locked(1)
+	tmp_str=list_dialog("Choose a word:",$mk_comp_match_list,"ok","dismiss")
+	set_locked(0)
+	
+	if (($list_dialog_button==1) && (tmp_str!=""))
+	{
+		replace_range($mk_comp_beg_of_word_pos,save_cursor,tmp_str)
+		set_cursor_pos($mk_comp_beg_of_word_pos+length(tmp_str))
+		$mk_comp_end_of_word_pos=save_cursor
+	}
+}
+
+# arguments comparason
+define mk_comp_init_arg
+{
+   $mk_comp_args_list1["local"]=0
+   $mk_comp_args_list1["local ctags"]=0
+   $mk_comp_args_list1["global ctags"]=0
+   $mk_comp_args_list1["dico"]=0
+   $mk_comp_args_list1["file name"]=0
+   
+   $mk_comp_args_list2["dialog"]=0
+   $mk_comp_args_list2["backward"]=0
+}
+
+# arguments comparason
+define mk_comp_add_arg
+{
+	if( $1 in $mk_comp_args_list1)
+	{
+		$mk_comp_args_list1[$1]=1
+		return
+	}
+	
+	if( $1 in $mk_comp_args_list2)
+	{
+		$mk_comp_args_list2[$1]=1
+		return
+	}
+	
+	dialog("completion: unknow argument: " $1)
+}
+
+# select the line in file $1 which start with $mk_comp_beg_of_word
+define mk_comp_grep
+{
+	if($1=="") return
+
+	tmplist=replace_in_string($1,"\n"," ","regex","copy")
+	command = "cd " mk_action_path() ";" $mk_uc["grep"] " -h -e '^" $mk_comp_beg_of_word "' " tmplist
+	return mk_shell_command(command,"")
+}
+
+# complete word dialog
+# args:
+#	local: search in actual window text
+#	local ctags: search in ctags file
+#	global ctags: search in ctags file
+#	dico: search in dico file
+#	file name: search in file name of $filepath
+#	dialog: dialog box instead of replacing text
+#	backward: previous completion (ignored when dialog is specified)
+define mk_completion
+{
+	if($n_args>6)
+	{
+		dialog("completion: too much parameters in completion.nm")
+		return
+	}
+	
+	if($selection_start!=-1) set_cursor_pos($selection_end)
+	
+	#save old param
+	old_args_list1=$mk_comp_args_list1
+	mk_comp_init_arg()
+	if ($n_args>=1) mk_comp_add_arg($1)
+	if ($n_args>=2) mk_comp_add_arg($2)
+	if ($n_args>=3) mk_comp_add_arg($3)
+	if ($n_args>=4) mk_comp_add_arg($4)
+	if ($n_args>=5) mk_comp_add_arg($5)
+	if ($n_args>=6) mk_comp_add_arg($6)
+	
+	is_new_match=mk_comp_is_new_match(old_args_list1)
+	# test
+	if (is_new_match==1)
+	{
+		# add new match
+		if ($mk_comp_args_list1["local"])
+		{
+			$mk_comp_count=0
+			mk_add_win_completion()
+		}
+		if ($mk_comp_args_list1["dico"])
+		{
+			$mk_comp_input=mk_dico_match($mk_comp_beg_of_word)
+			mk_add_string_completion()
+		}
+		if ($mk_comp_args_list1["local ctags"])
+		{
+			$mk_comp_input=mk_buffer_tags()
+			mk_add_string_completion()
+		}
+		if ($mk_comp_args_list1["global ctags"])
+		{
+			tags_file = mk_tags_filename(mk_action_path(),"list")
+			$mk_comp_input=mk_comp_grep(tags_file)
+			mk_add_string_completion()
+		}
+		if ($mk_comp_args_list1["file name"])
+		{
+			maxdepth = ""
+			if($mk_uc_compatibility["maxdepth"]) maxdepth = "-maxdepth 3"
+			find_param="\\( \\( -type f -o -type d -o -type l \\) -a -regex .\\*" mk_ssc($mk_comp_beg_of_word) ".\\* \\)"
+			cmd="cd  " mk_action_path() " ; " $mk_uc["find"] " . " maxdepth " " find_param " -exec \\basename {} \\;"
+			$mk_comp_input=shell_command(cmd,"")
+			if($shell_cmd_status==0) mk_add_string_completion()
+		}
+		
+		# exit if no match
+		if ($mk_comp_match_list=="") return
+		# delete actual word
+		if (!$mk_comp_args_list2["dialog"]) replace_range($mk_comp_beg_of_word_pos,$cursor,"")
+
+		
+		is_new_match=0
+	}
+
+
+	
+	# action:
+	if (is_new_match==0) 
+	{
+		if ($mk_comp_args_list2["dialog"])	
+		{
+			mk_completion_dialog()
+		}
+		else	
+		{			
+			#completion
+			if ($mk_comp_args_list2["backward"])
+			{
+				mk_next_completion_write(-1)
+			}
+			else
+			{
+				mk_next_completion_write() #forward by default
+			}
+		}
+	}
+}
+
+#initialistion of completion
+define mk_init_completion
+{
+	# pour trouver le debut du mot:
+	$mk_comp_lookfor= "\\w+"
+	
+	# determine la fin d'un d'un match possible dans un strng (ctags, ls, dico)
+	$mk_comp_end_string_regex="\\S+"
+	
+	# determine la fin d'un d'un match possible dans la fenetre
+	$mk_comp_end_win_regex="\\w+"
+	
+	# determine le debut d'un match possible dans la fenetre
+	# (en debut de fichier, un retour chariot est simule)
+	$mk_comp_beg_win_regex="(?:\\W|\\n)"
+	
+	# completion maximum match word:
+	$mk_comp_max= 50
+	
+	# string input for ctags stuff
+	$mk_comp_input=""
+	
+	mk_comp_init_arg()
+	mk_comp_match_init("",-1)
+	
+	#chemin ou sont les dicos:
+	$dico_path=mk_pathname($MK_ENV_VAR["NEDIT_MK"] "/customize/dicos/")
+	
+	if(mk_test_path($dico_path)=="")
+	{
+		mk_add_error_line("Warning: completion.nm: cannot find directory " $dico_path)
+	}
+}
+
+mk_init_completion()

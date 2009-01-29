@@ -1,0 +1,26 @@
+
+define mk_getSourceControlCmd
+{
+	cmd = $mk_sourcecontrol[$1]
+	cmd = replace_in_string(cmd,"[FILENAME]",$2,"copy")
+	cmd = replace_in_string(cmd,"[FILEPATH]",$3,"copy")
+	return cmd
+}
+define mk_SourceControlAction
+{
+	cmd = mk_getSourceControlCmd($1,$2,$3)
+	res = mk_shell_command(cmd)
+	return res
+}
+define mk_SourceControlActionDialog
+{
+	list=mk_unsplit($mk_sourcecontrol,"key")
+	res=list_dialog("Choose an action:",list,"Ok","Cancel")
+	if($list_dialog_button!=1 || res=="") return
+	mess = mk_SourceControlAction(res,$file_name,$file_path)
+	n=search_string(mess,"\\S",0,"regex")
+	if(n!=-1)
+	{
+		dialog(mess)
+	}
+}

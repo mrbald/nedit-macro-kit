@@ -1,0 +1,316 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: ctags stuff                           #
+##################################################
+
+define mk_find_definition
+{
+	path=mk_action_path()
+	tagsFile=mk_tags_filename(path,"list")
+	if(tagsFile=="") return
+	
+	if($selection_start!=-1)
+	{
+		str=get_selection()
+	}
+	else
+	{
+		str=string_dialog("Enter tag:","ok","cancel")
+		if((str=="") || ($string_dialog_button!=1)) return
+	}
+
+	command="cd  " path ";" $mk_uc["grep"] " -Ei ^" str "  " tagsFile
+	res=mk_shell_command(command)
+	if(length(res)>1)
+	{
+		res2=replace_in_string(res,"^(\\S+).*$","\\1","regex")
+		goto=list_dialog("Choose tag:",res2,"Ok","Cancel")
+		if((goto!="")&&($string_dialog_button==1))
+		{
+			find_definition(goto)
+		}
+	}
+}
+
+# find  tags file name in $1
+define mk_tags_filename
+{
+	command=$mk_uc["find"] " " mk_ssc($1) "  -type f -and \\( " $mk_ctags_filename " \\)"
+	res=mk_shell_command(command)
+	array=split(res,"\n")
+	
+	if(($n_args>1) && ($2=="list"))
+	{
+		res=""
+		for (i in array)
+		{
+			res=res " "mk_ssc(array[i])
+		}
+		return res
+	}
+	else
+	{
+		return array
+	}
+	
+}
+
+
+# load parameters of ctags (based on $mk_ctags_local)
+define mk_get_ctags_lang
+{
+	lang=""
+	n=search_string($ctags_list_languages,"^" mk_literal($1) "$",0,"regex")
+	if (n!=-1)
+	{
+		lang=$1
+	}
+	else if ($1 in $mk_ctags_lang)
+	{
+		n=search_string($ctags_list_languages, "^"mk_literal($mk_ctags_lang[$1])"$", 0,"regex")
+		if (n!=-1)
+		{
+			lang = $mk_ctags_lang[$1]
+		}
+	}
+	
+	return lang
+}
+
+
+
+# get the ctags output of the buffer
+define mk_create_tags_file
+{
+	filename=".tags"
+	path=$1
+	lang=$2
+	ctags_lang=mk_get_ctags_lang(lang)
+	if(ctags_lang=="")
+	{
+		command="cd  " mk_ssc(path) " ; "$mk_uc["ctags"] " -o "filename" *"
+		res=mk_shell_command(command)
+	}
+	else
+	{
+		filename=".tags-"ctags_lang
+		mask="*"
+		
+		# get list of defintion
+		command="cd  " mk_ssc(path) " ; "$mk_uc["ctags"] " -o " filename " " mask
+		res=mk_shell_command(command)
+	}
+	
+	return mk_filename(filename,path)
+}
+
+#load default tag file
+define mk_load_tags_file
+{
+	filename=$empty_array
+	if(($n_args>0) && ($1=="create"))
+	{
+		filename=mk_create_tags_file($file_path,$language_mode)
+		load_tags_file(filename)
+	}
+	else
+	{
+		filename=mk_tags_filename($file_path)
+		for (i in filename)
+		{
+			load_tags_file(filename[i])
+		}
+	}
+	
+}
+
+# get the ctags of the current wndo
+define mk_buffer_tags
+{
+	ctags_lang=mk_get_ctags_lang($language_mode)
+	if(ctags_lang=="") return
+	param="--language-force="ctags_lang
+	if(ctags_lang in $mk_ctags_local)
+	{
+		param=param " " $mk_ctags_local[ctags_lang]
+	}
+	
+	kinds=""
+	if(($n_args>0) && ($1!=""))
+	{
+		kinds="--"ctags_lang"-kinds="
+		param=replace_in_string(param,mk_literal(kinds)"\w+","","regex","copy")
+		param=param " " kinds $1
+	}
+	
+	# copy the content of the buffer on a file
+	buffer_content=$file_name
+	complete_buffer_content=mk_filename(buffer_content,$MK_ENV_VAR["TMP_PATH"])
+	shell_command("\\rm -f " complete_buffer_content,"")
+	write_test=write_file(get_range(0,$text_length),complete_buffer_content)
+	if(write_test==0) return ""
+	
+	# get list of defintion
+	command="cd  " $MK_ENV_VAR["TMP_PATH"] " ; "$mk_uc["ctags"]" -x " kinds " " param " " buffer_content
+	res=mk_shell_command(command)
+	
+	# delete tmp file
+	error_mess = shell_command("\\rm -f " complete_buffer_content,"")
+	
+	if(res=="\n") res=""
+	return res
+}
+
+
+define mk_get_filter_param
+{
+	re="(\\l*):(.*)"
+	res=$empty_array
+	res["kinds"]=replace_in_string($1,re,"\\1","regex")
+	res["match"]=replace_in_string($1,re,"\\2","regex")
+	res["regex"]="^(?!\\S*" mk_literal(res["match"]) "\\S*).*$\n"
+	return res
+}
+
+# list ctags definition
+define mk_local_tags
+{
+	filter_str=""
+	if($n_args>0) filter_str=$1
+	filter_param=mk_get_filter_param(filter_str)
+	kinds=filter_param["kinds"]
+	regex=filter_param["match"]
+
+	ctags_lang=mk_get_ctags_lang($language_mode)
+	if(ctags_lang=="") return
+	
+	ctags_output=mk_buffer_tags(kinds)
+	tmp=$mk_ctags_line
+	refTags=mk_ref_number($mk_ctags_line,"tag")
+	refLine=mk_ref_number($mk_ctags_line,"line")
+	refSpace=mk_ref_number($mk_ctags_line,"space")
+	refType=mk_ref_number($mk_ctags_line,"type")
+	replaceBy="\\"refTags["index"]"\\"refSpace["index"]"\\"refType["index"]"   --line \\"refLine["index"]
+	
+	if(regex!="")
+	{
+		ctags_output = replace_in_string(ctags_output,filter_param["regex"],"","regexNoCase")
+	}
+
+	if(ctags_output=="") return
+	
+	# list dialog box:
+	ctags_output=replace_in_string(ctags_output, $mk_ctags_line, replaceBy,"regex")
+	set_locked(1)
+	def=list_dialog("Choose one:",ctags_output,"goto","filter","dismiss")
+	set_locked(0)
+	
+	if($list_dialog_button==2)
+	{
+		kinds=mk_get_kind_array(ctags_lang)
+		kres=string_dialog("Language: " ctags_lang "\nKind list:\n" $last_kind_output,"Ok","Cancel")
+		if(($string_dialog_button!=1) || (kres=="")) return
+		mk_local_tags(kres)
+	}
+	else if ((def!="")&&($list_dialog_button==1))
+	{
+		# goto line:
+		line=replace_in_string(def,"^.*?((?#line:)[0-9]+)$","\\1","regex")
+		goto_line_number(line)
+	}
+}
+
+define mk_get_kind_array
+{
+	command=$mk_uc["ctags"] " -x --list-kinds="$1
+	kinds=mk_shell_command(command)
+	
+	if($shell_cmd_status!=0)
+	{
+		return $empty_array
+	}
+	res=$empty_array
+	regex="^(\\l) +(.*)$"
+	beg=search_string(kinds,regex,0,"regex")
+	while (beg!=-1)
+	{
+		end=$search_end
+		str=substring(kinds,beg,end)
+		v1=replace_in_string(str,regex,"\\1","regex")
+		v2=replace_in_string(str,regex,"\\2","regex")
+		res[v1]=v2
+		beg=search_string(kinds,regex,end,"regex")
+	}
+	$last_kind_output=kinds
+	return res
+}
+
+# list ctags definition
+define mk_global_tags
+{
+	path=mk_action_path()
+	lang=$language_mode
+	ctags_lang=mk_get_ctags_lang(lang)
+	if(ctags_lang=="") return
+	
+	mk_get_kind_array(ctags_lang)
+	
+	kres=string_dialog("Language: " ctags_lang "\nKind list:\n" $last_kind_output "\nEnter filter:\n(C++ example: \"f:get_\")","Ok","Cancel")
+	if($string_dialog_button!=1) return
+	
+	filter_param=mk_get_filter_param(kres)
+	kinds=filter_param["kinds"]
+	regex=filter_param["match"]
+	
+	mask="*"
+	
+	# get list of defintion
+	kindparam=""
+	if(kinds!="")
+	{
+		kindparam = "--" ctags_lang "-kinds="kinds
+	}
+	empty=""
+	command="cd  " mk_ssc(path) " ; "$mk_uc["ctags"] " -x --language-force=" ctags_lang " " kindparam" " mask
+	
+	ctags_output=mk_shell_command(command)
+	if(ctags_output=="\n")
+	{
+		dialog("No tag found.")
+		return
+	}
+	
+	if(regex!="")
+	{
+		ctags_output = replace_in_string(ctags_output,filter_param["regex"],"","regexNoCase")
+	}
+	
+	mess="Symbols containing \"" regex "\":"
+	if(ctags_output=="")
+	{
+		dialog("No match","Cancel")
+		return
+	}
+	
+	
+	# list dialog box:
+	def=list_dialog(mess,ctags_output,"goto","dismiss")
+	if ((def!="")&&($list_dialog_button==1))
+	{
+		ref_line=mk_ref_number($mk_ctags_line,"line")
+		ref_file=mk_ref_number($mk_ctags_line,"file")
+		line=replace_in_string(def,$mk_ctags_line,"\\"ref_line["index"],"regex")
+		file=replace_in_string(def,$mk_ctags_line,"\\"ref_file["index"],"regex")
+		file=mk_open_file(file,path)
+		if(file!="") goto_line_number(line)
+	}
+}
+
+define mk_ctags_init
+{
+	$last_kind_output=""
+	$ctags_list_languages=shell_command($mk_uc["ctags"] " -x --list-languages","")
+	$mk_ctags_line = "^((?#tag:)\\w.+)((?#space:) +)(?:((?#type:).*) +)?((?#line:)[0-9]+) +((?#file:)\\S+) +((?#misc:).+)$"
+}
+
+mk_ctags_init()

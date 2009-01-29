@@ -1,0 +1,143 @@
+# environement variable initialisation
+define mk_init_env_var
+{
+	$init_env_var_error=""
+	$MK_ENV_VAR=$empty_array
+	
+	# home path
+	$MK_ENV_VAR["HOME"] = getenv("HOME")
+	if($MK_ENV_VAR["HOME"]=="")
+	{
+		$MK_ENV_VAR["HOME"] = getenv("home")
+	}
+	
+	# host name
+	$MK_ENV_VAR["HOST"] = getenv("HOST")
+	if($MK_ENV_VAR["HOST"]=="")
+	{
+		$MK_ENV_VAR["HOST"] = getenv("host")
+	}
+	if($MK_ENV_VAR["HOST"]=="")
+	{
+		$MK_ENV_VAR["HOST"] = shell_command("hostname","")
+		if($shell_cmd_status!=0)
+		{
+			new_error = "Something went wrong while evaluating `hostname`.\nNEdit is probably using a shell which is not on your platform.\n"
+			$init_env_var_error = $init_env_var_error "\n" new_error
+		}
+		else
+		{
+			$MK_ENV_VAR["HOST"] = substring($MK_ENV_VAR["HOST"],0,length($MK_ENV_VAR["HOST"])-1)
+		}
+	}
+	
+	# user name
+	$MK_ENV_VAR["USER"] = getenv("USER")
+	if($MK_ENV_VAR["USER"]=="")
+	{
+		$MK_ENV_VAR["USER"] = getenv("user")
+	}
+	
+	# nedit home path
+	$MK_ENV_VAR["NEDIT_HOME"] = getenv("NEDIT_HOME")
+	if($MK_ENV_VAR["NEDIT_HOME"]=="")
+	{
+		shell_command("test -d ~/.nedit","")
+		if($shell_cmd_status==0)
+		{
+			$MK_ENV_VAR["NEDIT_HOME"] = $MK_ENV_VAR["HOME"] "/.nedit"
+		}
+		else
+		{
+			shell_command("test -d ~/.neditdir","")
+			if($shell_cmd_status==0)
+			{
+				$MK_ENV_VAR["NEDIT_HOME"] = $MK_ENV_VAR["HOME"] "/.neditdir"
+			}
+			else
+			{
+				$MK_ENV_VAR["NEDIT_HOME"] = $MK_ENV_VAR["HOME"]
+			}
+		}
+	}
+	
+	# nedit macro-kit path
+	$MK_ENV_VAR["NEDIT_MK"] = getenv("NEDIT_MK")
+	if($MK_ENV_VAR["NEDIT_MK"]=="")
+	{
+		if($MK_ENV_VAR["NEDIT_HOME"]==$MK_ENV_VAR["HOME"])
+		{
+			$MK_ENV_VAR["NEDIT_MK"]=$MK_ENV_VAR["NEDIT_HOME"] "/.nedit-macro-kit/"
+		}
+		else
+		{
+			$MK_ENV_VAR["NEDIT_MK"]=$MK_ENV_VAR["NEDIT_HOME"] "/macro-kit/"
+		}
+	}
+
+	# check for missing variables
+	for (k in $MK_ENV_VAR)
+	{
+		if($MK_ENV_VAR[k]=="")
+		{
+			new_error = "varibale " k " undefined.\n"
+			$init_env_var_error = $init_env_var_error "\n" new_error
+		}
+	}
+	
+	shell_command("( test -d "$MK_ENV_VAR["NEDIT_HOME"]" ) && (test -d "$MK_ENV_VAR["NEDIT_MK"]" )","")
+	if($shell_cmd_status!=0)
+	{
+		new_error = "NEDIT_HOME or NEDIT_MK not found"
+	}
+	
+	$MK_ENV_VAR["MACRO_DIR"] = $MK_ENV_VAR["NEDIT_MK"] "/macro/"
+	
+#	$MK_ENV_VAR["TMP_PATH"]=$MK_ENV_VAR["HOME"]"/tmp/"
+	$MK_ENV_VAR["TMP_PATH"]="/tmp/"
+	shell_command("test -d " $MK_ENV_VAR["TMP_PATH"],"")
+	if($shell_cmd_status!=0)
+	{
+		new_error = "/tmp does not exist.\nPlease open mk.nm and enter a proper temporary directory name.\n"
+		$init_env_var_error = $init_env_var_error "\n" new_error
+	}
+	
+	$MK_ENV_VAR["MACRO_DIR"] = $MK_ENV_VAR["NEDIT_MK"] "/macro/"
+	
+	return ($init_env_var_error=="")
+}
+
+# show $MK_ENV_VAR
+define mk_show_env_var
+{
+	str="$MK_ENV_VAR:\n"
+	for(i in $MK_ENV_VAR)
+	{
+		str=str i"="$MK_ENV_VAR[i]"\n"
+	}
+	if($init_env_var_error!="")
+	{
+		str=str "\nERROR while initialisation:\n" $init_env_var_error
+	}
+	string_to_clipboard(str)
+	dialog(str"\nThis message in now in your clipboard.")
+}
+
+# load macro kit
+define mk_load_macro_kit
+{
+	# load all macros
+	if(mk_init_env_var())
+	{
+		load_macro_file($MK_ENV_VAR["MACRO_DIR"] "load_all_macros.nm")
+	}
+	else
+	{
+		dialog("Macro kit not Loaded:\n" $init_env_var_error)
+	}
+}
+
+mk_load_macro_kit()
+
+
+

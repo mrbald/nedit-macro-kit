@@ -1,0 +1,196 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: navigation  macros                    #
+##################################################
+
+# goto next modified windows
+define mk_next_modified_win
+{
+	currentName=$file_path $file_name
+	newName=focus_window(next_win_name())
+	while ((currentName!=newName) && (!$modified))
+	{
+		newName=focus_window(next_win_name())
+	}	
+	raise_window()
+}
+
+# goto next modified windows
+define mk_prev_modified_win
+{
+	currentName=$file_path $file_name
+	newName=focus_window(prev_win_name())
+	while ((currentName!=newName) && (!$modified))
+	{
+		newName=focus_window(prev_win_name())
+	}	
+	raise_window()
+}
+
+# swap between source and header files
+# extension name of source and header file are defined in macro_parameters.nm
+define mk_move_in_group
+{
+	if(($file_path=="") || ($file_name=="")) return
+	if(!($language_mode in $mk_file_group)) return
+	
+	path=$file_path
+	ext=mk_extract_extension($file_name)
+	bas=mk_extract_basename($file_name)
+		
+	# create new list
+	info=split($mk_file_group[$language_mode],"\n")
+	mask=info[0]
+	if(info[] == 1) dirlist="."
+	else dirlist = info[1]
+	
+	mask=replace_in_string(mask,"#",bas,"copy")
+	
+	
+	res=""
+	maxdepth=""
+	if($mk_uc_compatibility["maxdepth"]) maxdepth = "-mindepth 1 -maxdepth 1"
+
+	mask=mk_process_mask(mask)
+	cmd=	"cd " path " ; sh -c 'for i in " dirlist " ; do ( if [ -d $i ]; then ( find $i " maxdepth " " mask "; ); fi; ) ; done'"
+	res=shell_command(cmd,"")
+	res=substring(res,0,length(res)-1)
+	filename=$file_path $file_name
+	array=split(res,"\n","regex")
+	arraySize=array[]
+	maxDel=-1
+	for (i in array)
+	{
+		tmp=replace_in_string(array[i],"^\\.+/","","regex","copy")
+		n=search_string(filename,mk_literal(tmp)"$",0,"regex")
+		if(n!=-1)
+		{
+			delete array[i]
+			maxDel=i
+		}
+	}
+	maxDel=maxDel+1
+	if(array[]==0) return
+	index=-1
+
+	for(i=maxDel;i<arraySize;i++)
+	{
+		if(i in array)
+		{
+			index=i
+			break
+		}
+	}
+	if(index==-1)
+	{
+		for(i=0;i<maxDel;i++)
+		{
+			if(i in array)
+			{
+				index=i
+				break
+			}
+		}
+	}
+	
+	if(!(index in array)) return
+	
+	file = mk_first_line(array[index])
+	mk_open_file(file,$file_path)
+}
+
+# pop up a dialog box with file in the current action path
+define mk_open_local_file
+{
+	path=mk_action_path()
+	list=mk_allready_open(path".*",2)
+	mk_allready_open_dialog(list)
+}
+
+# pop up a dialog box for openning allready opened file with regex
+define mk_open_regex_file
+{
+	regex=""
+	mode=1
+	if(($n_args>0) && ($1=="dialog"))
+	{
+		list=mk_unsplit($mk_open_filter,"key")
+		key=list_dialog("Choose a mask:",list,"ok","cancel")
+		if(key in $mk_open_filter) regex=$mk_open_filter[key]
+		else return
+		mode=replace_in_string(regex,"^.*\(\?#mode=([1-3])\).*$","\\1","regex")
+		if(mode=="") mode=1
+	}
+	else
+	{
+		regex=string_dialog("Open file with regex:","file","dir/","dir/file","cancel")
+		mode=$string_dialog_button
+	}
+	
+	if((mode<4) && (regex!=""))
+	{
+		list=mk_allready_open(regex,mode)
+		mk_allready_open_dialog(list)
+	}
+}
+
+define mk_allready_open_dialog
+{
+	if($1=="") return
+	filename=list_dialog("Choose a file:",$1,"open","close all","cancel")
+	if(($list_dialog_button==1) && (filename!=""))
+	{
+		res=focus_window(filename)
+		if(res!="")
+		{
+			raise_window()
+		}
+	}
+	if($list_dialog_button==2)
+	{
+		array=split($1,"\n","regex")
+		for(i in array)
+		{
+			res=focus_window(array[i])
+			if(res!="")
+			{
+				close()
+			}
+		}
+	}
+}
+
+define mk_goto_main_file
+{
+	$param=$empty_array
+	if($n_args>0) $param[$1]=0
+	path = mk_action_path()
+	
+	#####################3
+	# check project file
+	pro=mk_find_project(path)
+	
+	if (pro[]==0)
+	{
+		return ""
+	}
+	else
+	{
+		if("MAIN" in pro)
+		{
+			return mk_open_file(pro["MAIN"],path)
+		}
+		else
+		{
+			return mk_open_file(pro["FILENAME"])
+		}
+	}
+}
+
+define mk_init_move
+{
+	#nothing	
+}
+
+mk_init_move()
+

@@ -1,0 +1,341 @@
+##################################################
+#                                                #
+#       Macro parameters for nedit               #
+#                                                #
+#    Type CTRL+ALT+M to open   this file         #
+#    Type SHIFT+CTRL+ALT+M to reload this file   #
+#                                                #
+#         Frank Perbet 2002/08/14                #
+#                                                #
+##################################################
+
+
+# see also file://line_jumping_parameters.nm
+# see also file://../../autoload.nm
+# see also file://../../smart_indent.nm
+
+
+
+
+
+##################################################################
+# 
+# UNIX INTERFACE : used everywhere, please have a look
+#
+##################################################################
+
+# unix command path:
+$mk_uc=$empty_array
+$mk_uc["nc"]       = "nedit-nc"  # <- !!!! MOST COMMON CASE OF ERROR !!!!
+$mk_uc["grep"]     = "\\grep"
+$mk_uc["find"]     = "\\find"          # <- Does it support the "maxdepth" opt?
+$mk_uc["rsh"]      = "\\ssh"           # <- Or maby rsh?
+$mk_uc["ctags"]    = "\\ctags"         # <- Use Exuberant Ctags
+$mk_uc["test"]     = "\\test"
+$mk_uc["ls"]       = "ls"
+
+# Since unix commands can have different parameters according
+# to the plateform used, it's possible to toggle the use of
+# some features (0->off, 1->on)
+
+# used of find . -maxdepth:
+$mk_uc_compatibility=$empty_array
+$mk_uc_compatibility["maxdepth"]=1
+
+
+
+
+
+
+
+
+
+##################################################################
+# 
+# WORK SETTING (used by work_setings.nm)
+#
+##################################################################
+
+# default behavior for working directory:
+# 2 -> use a multi-global working directory
+# 1 -> use a global working directory
+# 0 -> use local working directory
+$mk_action_path_mode=2
+# it is IMPORTANT to understand how does it work!!
+# Try to execute something (F8) while editing files with different path
+# use Ctrl_alt+S to switch the mode
+
+#list of useful host (Shift+Alt+H)
+$mk_host_list="\
+asperule.inrialpes.fr\n\
+basilic.inrialpes.fr\n\
+capucine.inrialpes.fr\n\
+carthame.inrialpes.fr\n\
+laurier.inrialpes.fr\n\
+melisse.inrialpes.fr\n\
+oseille.inrialpes.fr\n\
+piment.inrialpes.fr\n\
+tabasco.inrialpes.fr"
+
+
+
+
+
+
+
+
+##################################################################
+# 
+# PREDEFINED UNIX COMMAND (used in execution_in_buffer.nm)
+#
+##################################################################
+
+#predefined comment for [ALT} F9-F12
+#warning: metacharacters must be preceeded by \\ to be interpret on
+#the remote host and in the good path
+$mk_fnkey_cmd=$empty_array
+
+#  C++ predefine command
+$mk_fnkey_cmd["C++"]=$empty_array
+$mk_fnkey_cmd["C++"][1]="make" #F9
+$mk_fnkey_cmd["C++"][2]="make qmake" #F10:
+$mk_fnkey_cmd["C++"][3]="make clean"  #F11
+$mk_fnkey_cmd["C++"][4]="" #F12
+$mk_fnkey_cmd["C++"][5]="make -j 4" #ALT+F9
+$mk_fnkey_cmd["C++"][6]="make qmake_all" #ALT+F10
+$mk_fnkey_cmd["C++"][7]="make distclean" #ALT+F11
+$mk_fnkey_cmd["C++"][8]="" #ALT+F12
+
+#  Latex predefine command
+$mk_fnkey_cmd["LaTeX"]=$empty_array
+$mk_fnkey_cmd["LaTeX"][1]="make" #F9
+$mk_fnkey_cmd["LaTeX"][2]="make bib" #F10:
+$mk_fnkey_cmd["LaTeX"][3]="make clean"  #F11
+$mk_fnkey_cmd["LaTeX"][4]="grep -Fn \\label *.tex" #F12
+$mk_fnkey_cmd["LaTeX"][5]="make dvi" #ALT+F9
+$mk_fnkey_cmd["LaTeX"][6]="ctags --language-force=bibTex *.bib" #ALT+F10
+$mk_fnkey_cmd["LaTeX"][7]="make distclean" #ALT+F11
+$mk_fnkey_cmd["LaTeX"][8]="grep -snHi -E ^@ *.bib" #ALT+F12
+
+#  Latex predefine command
+$mk_fnkey_cmd["default"]=$empty_array
+$mk_fnkey_cmd["default"][1]="make" #F9
+$mk_fnkey_cmd["default"][2]="" #F10:
+$mk_fnkey_cmd["default"][3]="make clean"  #F11
+$mk_fnkey_cmd["default"][4]="make clean all" #F12
+$mk_fnkey_cmd["default"][5]="" #ALT+F9
+$mk_fnkey_cmd["default"][6]="" #ALT+F10
+$mk_fnkey_cmd["default"][7]="" #ALT+F11
+$mk_fnkey_cmd["default"][8]="find ." #ALT+F12
+
+
+#  predefine command for list dialog
+$mk_predef_cmd["all update"]="cvsall.csh update"
+
+
+
+
+
+
+
+##################################################################
+# 
+# COMMENT (used in comment.nm)
+#
+##################################################################
+
+#List of automatic comment (for comment.nm)
+#you can defined 1 or 2 comment for each langage mode (separated by a coma)
+$mk_comment["C++"]="//,/*...*/"
+$mk_comment["JavaScript"]="//,/*...*/"
+$mk_comment["Java"]="//,/*...*/"
+$mk_comment["NEdit Macro"]="#"
+$mk_comment["SGML HTML"]="<!--...-->"
+$mk_comment["XML"]="<!--...-->"
+$mk_comment["LaTeX"]="%"
+$mk_comment["X Resources"]="!"
+$mk_comment["Matlab"]="%"
+$mk_comment["L System"]="/*...*/"
+$mk_comment["Mel"]="//"
+$mk_comment["Yacc"]="/*...*/"
+$mk_comment["MSDOS"]="REM "
+$mk_comment["default"]="#"
+$mk_comment["Lua"]="--"
+$mk_comment["glsl"]="//,/*...*/"
+
+#way of handle space and tab with comment macros:
+#from 1 to 3:
+# 0: comment at the begin of the line
+# 1: comment after tabulation/space
+# 2: smart (work with a proper use of tab)
+$mk_comment_mode=0
+
+
+
+
+
+
+
+
+##################################################################
+# 
+# DICO used in dico.nm
+#
+##################################################################
+
+# completion dico list (for completion.nm):
+$mk_dico["all"]="all.dico"
+$mk_dico["C++"]="cpp.dico opengl.dico stl.dico"
+$mk_dico["NEdit Macro"]="nedit.dico"
+$mk_dico["Makefile"]="makefile.dico"
+$mk_dico["Python"]="python.dico slithy.dico"
+$mk_dico["GlSl"]="glsl.dico"
+
+
+
+
+
+
+
+##################################################################
+# 
+# GREP (used in grep.nm)
+#
+##################################################################
+
+# grep param
+$mk_grep_param=$empty_array
+$mk_grep_param["grep"]="-snH"
+# put 1 if you want to use grep.py
+$mk_grep_param["grep.py"]=0
+# find param (perhaps something like maxdepth or mindepth)
+$mk_grep_param["find"]="-follow"
+# use case insensitive?
+$mk_grep_param["icase"]=1
+
+# ignored files (just for convenience, ther are not used anywhere):
+$mk_grep_ignore=$empty_array
+$mk_grep_ignore["cvs"] = "\\( -name ChangeLog -o -name Entries -o -name Root -o -name Repository  -o -name .#\\* \\)"
+$mk_grep_ignore["cpp"] = "\\( -name \\*.o -o -name \\*.so\\* -o -name \\*.bin\\* -o -name Makefile.\\* -o -name moc_\\* -o -name so_locations  -o -name tags   -o -name .tags \\)"
+$mk_grep_ignore["bck"] = "\\( -name \\*.bck -o -name \\~\\* \\)"
+$mk_grep_ignore["all"] = "\\( " $mk_grep_ignore["cvs"] " -o " $mk_grep_ignore["cpp"] " -o " $mk_grep_ignore["bck"] " \\)"
+
+# find mask:
+$mk_grep_mask=$empty_array
+$mk_grep_mask["default"]="-true"
+$mk_grep_mask["C++"]="\\( -name \\*.cpp -o -name \\*.c -o -name \\*.hpp -o -name \\*.C -o -name \\*.h -o -name \\*.inl -o -name \\*.pro \\) -and -not " $mk_grep_ignore["all"] 
+$mk_grep_mask["LaTeX"]="\\( -name \\*.tex \\) -and -not " $mk_grep_ignore["all"] " -and -not \\( -name annexe.tex -or -name save.tex -or  -name couverture.tex \\)" 
+$mk_grep_mask["SGML HTML"]="\\( -name \\*.html \\) -and -not  "$mk_grep_ignore["all"] 
+$mk_grep_mask["NEdit Macro"]="\\( -name \\*.nm -o -name \\*.py \\) -and -not  "$mk_grep_ignore["all"] 
+$mk_grep_mask["BibTeX"]="\\( -name \\*.bib \\)" 
+$mk_grep_mask["Python"]="\\( -name \\*.py \\)" 
+$mk_grep_mask[$mk_nedit_output_lang]="-true -and -not " $mk_grep_ignore["all"] 
+
+
+
+
+
+##################################################################
+# 
+# CTAGS (used in ctags.nm)
+#
+##################################################################
+
+#possible tags file name:
+$mk_ctags_filename="-name .tags-\\* -o -name .tags -o -name tags"
+
+
+#ctags lang translation table
+$mk_ctags_lang=$empty_array
+$mk_ctags_lang["C++"]="c++"
+$mk_ctags_lang["NEdit Macro"]="NEditMacro"
+$mk_ctags_lang["LaTeX"]="Tex"
+$mk_ctags_lang["BibTeX"]="bibTex"
+$mk_ctags_lang["Mk Expander"]="MkExpander"
+
+#ctags parameter (warning, use ctags lang!!!)
+$mk_ctags_local=$empty_array
+$mk_ctags_local["C++"]="--sort=no --C++-kinds=fp"
+$mk_ctags_local["Tex"]="--sort=no --C++-kinds=su"
+$mk_ctags_local["Python"]="--sort=no"
+$mk_ctags_local["Tex"]="--sort=no"
+$mk_ctags_local["BibTeX"]="--sort=yes"
+
+
+
+
+
+
+##################################################################
+# 
+# SWAP HEADER - SOURCE CONTROL
+#
+##################################################################
+$mk_sourcecontrol["checkout"]="cd [FILEPATH] ; ab checkout [FILENAME]"
+$mk_sourcecontrol["checkin"]="cd [FILEPATH] ; ab checkin [FILENAME]"
+$mk_sourcecontrol["getlatest"]="cd [FILEPATH] ; ab getlatest [FILENAME]"
+
+
+##################################################################
+# 
+# SWAP HEADER - SOURCE STUFF
+#
+##################################################################
+
+# first, the mask which define the group (# is replaced by the basename)
+# then, the path to look in (if empty: .)
+$mk_file_group["C++"]="\
+#.C #.cpp #.c #.cc #.c++ #.cxx #.inl #.h #.hpp #.hh #.H\n\
+. ../source ../src ../Src ../include ../Include"
+$mk_file_group["SGML HTML"]="#.html\n../english ../french"
+$mk_file_group["Mk Output"]=$mk_buffer_name_begin"*\n."
+$mk_file_group["GlSl"]="#.vert #.frag"
+
+# "open with filter" stuff
+$mk_open_filter[".pro"]="(?#mode=1).*\\.pro"
+$mk_open_filter[".hpp"]="(?#mode=1).*\\.hpp"
+$mk_open_filter[".nm"]="(?#mode=1).*\\.nm"
+$mk_open_filter[".tex"]="(?#mode=1).*\\.tex"
+$mk_open_filter[".bib"]="(?#mode=1).*\\.bib"
+
+
+
+
+
+
+
+
+
+##################################################################
+# 
+# NEDIT BUFFER  (used in buffer.nm)
+#
+##################################################################
+
+# if you want to set a default host name:
+
+
+# buffer param
+# raise output window afteran execution?
+$mk_output_param["raise"]=1
+# use of a nedit window dedicated to run shell command??
+# this is usefful because the execution of the macro do not
+# forbid the execution of other macros
+$mk_output_param["engine"]=1
+# force nedit to use tab
+$mk_output_param["tab"]=1
+#inittial geometry
+$mk_output_param["geometry"]="-geometry 130x24-0-0"
+
+$mk_output_param["incremental_backup"]=0
+$mk_output_param["incremental_search_line"]=0
+$mk_output_param["show_line_numbers"]=1
+$mk_output_param["statistics_line"]=0
+$mk_output_param["fonts"]="\
+-adobe-courier-medium-r-normal--14-140-75-75-m-90-iso8859-1\n\
+-adobe-courier-medium-o-normal--14-140-75-75-m-90-iso8859-1\n\
+-adobe-courier-bold-r-normal--14-140-75-75-m-90-iso8859-1\n\
+-adobe-courier-bold-o-normal--14-140-75-75-m-90-iso8859-1"
+
+
+

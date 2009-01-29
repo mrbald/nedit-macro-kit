@@ -1,0 +1,501 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: some useful macros                     #
+##################################################
+
+
+######################################3
+# FLAG with file
+
+
+#first param: motif
+#second param: taille
+define mk_motif_string
+{
+	nb_motif=$2/length($1)
+	res=""
+	for (i=0;i<nb_motif;i++)
+	{
+		res = res $1
+	}
+	return res
+}
+
+# return a string corresponding to a tabultion
+define mk_tab
+{
+	if ($em_tab_dist==-1)
+	{
+		return "\t"
+	}
+	else
+	{
+		return mk_motif_string(" ",$em_tab_dist)
+	}
+}
+
+# Memorise where you are
+define mk_clean_all_rangeset
+{
+	rangeset_destroy($rangeset_list)
+}
+
+#range set dialog
+define mk_flag_dialog
+{
+	if($mk_flags[]==0) return
+	
+	list=""
+	for(f in $mk_flags)
+	{
+		elem="["f"] "$mk_flags[f]["file"]":"
+		elem=elem " " mk_motif_string(" ",30-length(elem))
+		elem=elem $mk_flags[f]["sel"]
+		list=list elem "\n"
+	}
+	
+	
+	str=list_dialog("flag list:",list,"goto","erase","Cancel")
+	if(str=="") return
+	regex="^\\[([0-9]+)\\] (.*): +.*$"
+	n=replace_in_string(str,regex,"\\1","regex")
+	if($list_dialog_button==1)
+	{
+		mk_goto_flag(n)
+		return
+	}
+	
+	if($list_dialog_button==2)
+	{
+		r=$mk_flags[n]["range_set"]
+		if(r in $rangeset_list) rangeset_destroy(r)
+		delete $mk_flags[n]
+		return
+	}
+}
+
+# this should be part of rangeset function
+define mk_rangeset_exist
+{
+	for(k in $rangeset_list)
+	{
+		if($1==$rangeset_list[k]) return 1
+	}
+	return 0
+}
+
+# Memorise where you are
+define mk_insert_flag
+{
+	if($n_args==0) key="a"
+	else key=$1
+	if((key in $mk_flags) && (mk_rangeset_exist($mk_flags[key]["range_set"])))
+	{
+		r=$mk_flags[key]["range_set"]
+		range=rangeset_range(r)
+		rangeset_destroy(r)
+		if((range[]>0) && ((range["start"]<=$cursor) && ($cursor<range["end"])))
+		{
+			return
+		}
+	}
+	
+	beg=beg_of_line_pos()
+	end=end_of_line_pos()
+	if(end<$text_length) end++
+	
+	r=0
+	if(search_string(key,"^[0-9]$",0,"regex")==0)
+	{
+		r=rangeset_create()
+		rangeset_add(r, beg, end)
+		rangeset_set_color(r, $mk_flag_color[key])
+	}
+	
+	tmp["file"]=$file_path $file_name
+	tmp["cursor"]=$cursor
+	tmp["range_set"]=r
+	tmp["sel"]=get_range(beg, end)
+	
+	$mk_flags[key]=tmp
+}
+
+# Go to the memorized place
+define mk_goto_flag
+{
+	if($n_args==0) key="a"
+	else key=$1
+
+	if(key in $mk_flags)
+	{
+		tmp=$mk_flags[key]
+		file=tmp["file"]
+		if (file=="") return
+		mk_open_file(file)
+		if (focus_window(file)==file)
+		{
+			cursor=tmp["cursor"]
+			if(tmp["range_set"] in $rangeset_list)
+			{
+				range=rangeset_range(tmp["range_set"])
+				cursor=range["start"]
+			}
+			set_cursor_pos(cursor)
+		}
+	}
+}
+
+
+#return true if the string is untitled
+define mk_is_untitled
+{
+	return (search_string($file_name,"Untitled(_[0-9]+)?",0,"regex")==0)
+}
+
+# transform an array into a string
+# useful for debugging
+define mk_unsplit
+{
+	mode=2
+	sep="\n"
+	if($n_args>1)
+	{
+		if($2=="key") mode=1
+		else if($2=="value") mode=2
+		else if($2=="nice") mode=0
+		else mode=2
+	}
+	if($n_args>2)
+	{
+		sep=$3
+	}
+	str=""
+	
+	if(mode==0)
+	{
+		for (key in $1)
+		{
+			str= str key " -> " $1[key] sep
+		}
+	}
+	if(mode==1)
+	{
+		for (key in $1)
+		{
+			str= str key sep
+		}
+	}
+	if(mode==2)
+	{
+		for (key in $1)
+		{
+			str= str $1[key] sep
+		}
+	}
+	return str
+}
+
+# get the first line of a string
+define mk_first_line
+{
+	if($n_args!=1) return ""
+
+	pos_ret=search_string($1,"\n",0,"regex")
+	if(pos_ret==-1) return $1
+	return substring($1,0,pos_ret)
+}
+
+# convert a string into a raw string
+define mk_literal
+{
+	res=replace_in_string($1,"\\W","[&]","regex","copy")
+	if(search_string(res,"[^]",0)!=-1)
+	{
+		res=replace_in_string(res,"[^]","\\^")
+	}
+	return res
+}
+
+# transform a ls mask into a find mask
+define mk_process_mask
+{
+	mask=$1
+	# get rid of white space at the beginning and the end of the mask
+	tmp_mask=replace_in_string(mask,"(^\\s+)|(\\s+$)","","regex")
+	if(tmp_mask!="") mask=tmp_mask
+	# add "-o -name"
+	tmp_mask=replace_in_string(mask,"\\s+","\" -o -iname \"","regex")
+	if(tmp_mask!="") mask=tmp_mask
+	
+	return "-iname \"" mask "\""
+}
+
+# list allready opened file
+define mk_allready_open
+{
+	if( ($2<1) || ($2>3) )
+	{
+		dialog("mk_allready_open: wrong parameters")
+		return
+	}
+	current_windows=$file_path $file_name
+	list = ""
+	name = focus_window("last")
+	while (name!="")
+	{
+		lookin=""
+		if($2==1) lookin=$file_name
+		else if($2==2) lookin=$file_path
+		else if($2==3) lookin=$file_path $file_name
+		n=search_string(lookin,$1,0,"regex")
+		if((n==0) && ($search_end==length(lookin)))
+		{
+			list = list name "\n"
+		}
+		name = focus_window("next")
+	}
+	focus_window(current_windows)
+	if(list=="") return ""
+	else return substring(list,0,length(list)-1)
+}
+
+define mk_find_project
+{
+	res=$empty_array
+	path=$1
+	filename=mk_filename($project_filename,path)
+	txt=read_file(filename)
+	
+	if(txt!="")
+	{
+		res["FILENAME"]=filename
+	}
+	
+	re="^(.*?)(=)(.*?)$"
+	n=search_string(txt,re,0,"regex")
+	while(n!=-1)
+	{
+		line=substring(txt,n,$search_end)
+		n=$search_end
+		k=replace_in_string(line,re,"\\1","regex")
+		v=replace_in_string(line,re,"\\3","regex")
+		res[k]=v
+		n=search_string(txt,re,n,"regex")
+	}
+	
+		
+	if( path in $mk_wd_lang)
+	{
+		res["LANG"]=$mk_wd_lang[path]
+	}
+	if( path in $mk_wd_main)
+	{
+		res["MAIN"]=$mk_wd_main[path]
+	}
+
+	return res
+}
+
+define mk_main_language
+{
+	if($n_args>0)
+	{
+		path=$1
+	}
+	else
+	{
+		path=mk_action_path()
+	}
+	
+	if(mk_is_buffer_file())
+	{
+		inf=mk_get_buffer_info()
+		if("lang param" in inf)
+		{
+			return inf["lang param"]
+		}
+		if("lang" in inf)
+		{
+			return inf["lang"]
+		}
+	}
+	
+	
+	#####################3
+	# check project file
+	pro=mk_find_project(path)
+	if("LANG" in pro)
+	{
+		return pro["LANG"]
+	}
+	
+	return $language_mode
+}
+
+# return the reference number with eventual param
+# $1 line
+# $2 refname
+define mk_ref_number
+{
+	ref_param["index"]=-1
+	tmp=search_string($1,"([^\\\\]|^)(\\\\\\\\\\\\\\\\)*\\([^(?]",0,"regex")
+	if(tmp!=-1)
+	{
+		ref_param["error"]="matching parenthesys without comment"
+	}
+		
+	count=0
+	search_for="\\(\\(\\?#(\\w+):(.*?)\\)"
+	index=search_string($1,search_for,0,"regex")
+	while (index!=-1)
+	{
+		count++
+		sub=substring($1,index,$search_end)
+		ref=replace_in_string(sub,search_for,"\\1","regex")
+
+		param=replace_in_string(sub,search_for,"\\2","regex")
+		if(param!="")
+		{
+			ref_param["param"]=param
+		}
+		
+		if(ref==$2)
+		{
+			ref_param["index"]=count
+			return ref_param
+		}
+		index=search_string($1,search_for,$search_end,"regex")
+	}
+	return ref_param
+}
+
+# get ref $3 in regex $2 in string $1
+define mk_ref_string
+{
+	ref=mk_ref_number($2,$3)
+	res=replace_in_string($1,$2,"\\"ref["index"],"regex")
+	return res
+}
+
+# do nothing
+define mk_tmp_macro
+{
+	return
+}
+
+
+define mk_interpret
+{
+	macrodef="define mk_tmp_macro\n{\n" $1 "\nreturn \"\"\n}\n"
+	write_file( macrodef, $mk_tmp_file )
+	load_macro_file($mk_tmp_file)
+	return mk_tmp_macro()
+}
+
+define mk_get_regex
+{
+	regex=string_dialog("Enter regex:","copy to clipboard","Cancel")
+	if($string_dialog_button!=1) return
+	
+	res=$empty_array
+	n=search(regex,$selection_start,"regex")
+	while ((n!=-1) && ($search_end<$selection_end))
+	{
+		res[res[]]=get_range(n,$search_end)
+		n=search(regex,$search_end,"regex")
+	}
+	
+	if($string_dialog_button==1)
+	{
+		list=""
+		for (i=0;i<res[];i++)
+		{
+			list=list res[i]"\n"
+		}
+		string_to_clipboard(list)
+	}
+}
+
+define mk_uva_insert
+{
+	ok=1
+	for (i in $mk_uva)
+	{
+		if($mk_uva[i]==$1)
+		{
+			ok=0
+			break
+		}
+	}
+	
+	if(ok)
+	{
+		$mk_uva[$2]=$1
+		return 1
+	}
+	else
+	{
+		return 0
+	}
+}
+
+# copy file list into clipboard
+define mk_filelist_to_clipboard
+{
+	sep=" "
+	
+	path=mk_action_path()
+	mask=string_dialog(path"\nEnter mask","Ok","Recursive","Cancel")
+	if(mask=="") return
+	
+	if($string_dialog_button==1)
+	{
+		cmd="cd " path " ; ls " mask
+	}
+	else if($string_dialog_button==2)
+	{
+		cmd="cd " path " ; find . -name '" mask "`"
+	}
+	else
+	{
+		return
+	}
+	
+	list=shell_command(cmd,"")
+	list=replace_in_string(list,"\n"," ","regex")
+	list=substring(list,0,length(list)-1)
+	
+	if ($selection_start==-1)
+	{
+		string_to_clipboard(list)
+	}
+	else
+	{
+		delete_selection()
+		insert_string(list)
+	}
+}
+
+
+# init
+define mk_init_util
+{
+	#unique value array init:
+	$mk_uva=$empty_array
+	
+	$project_filename=".nedit-project"
+	
+	$mk_flags=$empty_array
+	$mk_flag_color[0]="#309030"
+	$mk_flag_color[1]="#e03030"
+	$mk_flag_color[2]="#303090"
+	$mk_flag_color[3]="#909030"
+	$mk_flag_color[4]="#903090"
+	$mk_flag_color[5]="#309090"
+	$mk_flag_color[6]="#409030"
+	$mk_flag_color[7]="#4060e0"
+	$mk_flag_color[8]="#409090"
+	$mk_flag_color[9]="#e03040"
+}
+
+mk_init_util()

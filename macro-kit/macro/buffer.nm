@@ -1,0 +1,610 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: nedit buffer                           #
+##################################################
+
+# get buffer name
+define mk_bufferFileName
+{
+	return $MK_ENV_VAR["TMP_PATH"] $mk_buffer_name_begin $1 "_" $mk_buffer_baseName ".tmp"
+}
+
+# get engine name
+define mk_engineFileName
+{
+	return $MK_ENV_VAR["TMP_PATH"] $mk_engine_name_begin $1 "_" $mk_buffer_baseName ".tmp"
+}
+
+# get new buffer name
+define mk_newBuffer
+{
+	maxBuff=-1
+	for(i in $mk_buffer_state)
+	{
+		if(i>maxBuff) maxBuff=i
+	}
+	maxBuff++
+	$mk_buffer_state[maxBuff] = 0
+	return maxBuff
+}
+
+# get free buffer
+define mk_getBuffer
+{
+	# current window is a buffer
+	n=mk_currentBuffName()
+	if(n!="")
+	{
+		if(!(n in $mk_buffer_state))
+		{
+			mk_close_engine_window(n)
+			$mk_buffer_state[n]=0
+		}
+		if($mk_buffer_state[$mk_current_buffer] == 0 )
+		{
+			return n
+		}
+	}
+	
+	if(!($mk_current_buffer in $mk_buffer_state))
+	{
+		mk_close_engine_window($mk_current_buffer)
+		$mk_buffer_state[$mk_current_buffer]=0
+	}
+	if($mk_buffer_state[$mk_current_buffer] == 0 )
+	{
+		return $mk_current_buffer
+	}
+	
+	return mk_newBuffer()
+}
+
+
+# get the buffer number according to buffer filename
+define mk_currentBuffName
+{
+	n = replace_in_string($file_name, mk_literal($mk_buffer_name_begin)"([0-9]+).*","\\1","regex")
+	return n
+}
+
+# arg1 -> unix command
+# arg2 -> unix path
+# arg3 -> host (local by default)
+define mk_execute_in_buffer
+{
+	buffName=mk_getBuffer()
+	command=""
+	path=""
+	host=$MK_ENV_VAR["HOST"]
+	lang="Unknown"
+	
+	# parameters
+	if ($n_args<2)
+	{
+		dialog("mk_execute_in_buffer: You must specify at least 2 arguments:\n- the unix command\n- the path.")
+	}
+	# parameters
+	else if ($n_args==2)
+	{
+		command=$1
+		path=$2
+	}
+	else if ($n_args==3)
+	{
+		command=$1
+		path=$2
+		host=$3
+	}
+	else if ($n_args==4)
+	{
+		command=$1
+		path=$2
+		host=$3
+		lang=$4
+	}
+	else
+	{
+		dialog("output_session: Too many arguments.")
+		mk_buffer_end(buffName)
+		return
+	}	
+	
+	if(command=="")
+	{
+		dialog("mk_execute_in_buffer: Missing arguments")
+		return
+	}
+	
+	if(lang=="") lang="Unknown"
+	if((host=="") || (host=="local"))  host=$MK_ENV_VAR["HOST"]
+	
+	mk_buffer_add_command(buffName,command,path,host,lang)
+}
+
+# add a string to the buffer (without deleting previous text)
+define mk_buffer_add_string
+{
+	buffName=$1
+	str=$2
+	
+	#check arg
+	del = 0
+	if($n_args==3)
+	{
+		if($3=="erase") del=1
+	}
+	else if($n_args!=2)
+	{
+		dialog("mk_buffer_add_string: wrong number of argument")
+		return
+	}
+	
+	mk_special_insert_flag()
+	if(mk_open_buffer(buffName)=="") return ""
+	
+	if(del) replace_range(0,$text_length,"")
+	
+	#insert string
+	deselect_all()
+	set_cursor_pos($text_length)
+	insert_string(str)
+	
+	mk_buffer_end(buffName)
+}
+
+# save output.tmp
+define mk_buffer_end
+{
+	buffName=$1
+	
+	# check if the file is the buffer file
+	if(focus_window(mk_bufferFileName(buffName))=="") return
+	
+	save()
+	
+	$mk_buffer_state[buffName]=0
+	
+	$mk_buffer_cmd=""
+	$mk_buffer_head=""
+}
+
+# arg1 -> unix command
+# arg2 -> unix path
+# arg3 -> host
+define mk_buffer_add_command
+{
+	if($n_args!=5)
+	{
+		dialog("mk_buffer_add_command: wrong number of argument")
+		return
+	}
+	
+	buffName=$1
+	command=$2
+	command_path=$3
+	host=$4
+	lang=$5
+	
+	# start text
+	beg_text = ""
+	beg_text = "NEdit buffer: " shell_command("\\date '+%Y/%m/%d, %H:%M:%S'","")
+	beg_text = beg_text "language: " lang "\n"
+	beg_text = beg_text "command: " command "\n"
+	beg_text = beg_text "host: " host "\n"
+	beg_text = beg_text "path: " command_path "\n"
+			
+	# create the global command
+	if (host==$MK_ENV_VAR["HOST"])
+	{
+		echo_host="Host: " host " (local)\n"
+		global_command="cd " mk_ssc(command_path) " ; " command ";echo '"$mk_buffer_end"'"
+	}
+	else
+	{
+		echo_host="Host: " host "\n"
+		tmp_cmd="cd " mk_ssc(command_path) " ; " command ";echo '"$mk_buffer_end"'"
+		global_command=$mk_uc["rsh"] " " host " " mk_ssc(tmp_cmd)
+	}
+	$mk_buffer_cmd=global_command
+	$mk_buffer_head=beg_text
+	
+	# execute command
+	mk_special_insert_flag()
+	if(mk_open_buffer(buffName)=="") return ""
+	
+	if ((!("engine" in $mk_output_param)) || $mk_output_param["engine"])
+	{
+		mk_buffer_launch_via_engine(buffName)
+	}
+	else
+	{
+		mk_buffer_launch(buffName)
+	}
+}
+
+
+# kill nedit rengine
+define mk_kill_engine
+{
+	if(($n_args==1) && ($1!=""))
+	{
+		 buffName=$1
+	}
+	else
+	{
+		buffName=mk_currentBuffName()
+		if(buffName=="")
+		{
+			return
+		}
+	}
+	
+	mk_close_engine_window(buffName)
+	$mk_buffer_state[buffName]=0
+	
+	current_file = $file_path $file_name
+	if(focus_window(mk_bufferFileName(buffName))!="")
+	{
+		end_of_file()
+		insert_string("...killed\n")
+		save()
+		focus_window(current_file)
+	}
+}
+
+
+# close engine window
+define mk_close_engine_window
+{
+	buffName=$1
+	current_file = $file_path $file_name
+	if(current_file==mk_engineFileName(buffName))
+	{
+		close()
+	}
+	else
+	{
+		if(focus_window(mk_engineFileName(buffName))!="")
+		{
+			close()
+			focus_window(current_file)
+		}
+	}
+}
+
+
+# execution via engine buffer
+define mk_buffer_launch_via_engine
+{
+	buffName=$1
+	
+	# launch command
+	current_file = $file_path $file_name
+	if(current_file == mk_engineFileName(buffName))
+	{
+		count=0
+		while(($mk_buffer_state[buffName]==1) && (count<1000000))
+		{
+			count++
+		}
+		mk_buffer_launch(buffName)
+	}
+	# or focus the engine and launch the command
+	else
+	{
+		$mk_buffer_state[buffName]=1
+		
+		server_param=""
+		if($server_name!="")
+		{
+			server_param="-svrname " $server_name
+		}
+		
+		remote_command = $mk_uc["nc"] " -iconic -do 'mk_buffer_launch_via_engine("buffName")' " server_param " " mk_engineFileName(buffName)
+		
+		res=shell_command(remote_command,"")
+		if($shell_cmd_status!=0)
+		{
+			dialog("buffer.nm ERROR :\n" res,"Cancel")
+			return
+		}
+		
+		$mk_buffer_state[buffName]=0
+	}
+}
+
+# execute the command
+define mk_buffer_launch
+{
+	buffName=$1
+	buffFileName=mk_open_buffer(buffName)
+	if(buffFileName=="")
+	{
+		dialog("ERROR: Cannot open buffer file...")
+		return
+	}
+	
+	$mk_buffer_state[buffName]=1
+
+	replace_range(0,$text_length,"")
+
+	if($language_mode!=$mk_nedit_output_lang)
+	{
+		set_language_mode($mk_nedit_output_lang)
+	}
+
+	set_cursor_pos($text_length)
+	insert_string($mk_buffer_head)
+
+	# hack for command, because execute_command transform # and %
+	cmd=replace_in_string($mk_buffer_cmd,"([#%])","\\\\\\1\\1","regex")
+	if(cmd=="") cmd=$mk_buffer_cmd
+	execute_command(cmd)
+
+	mk_buffer_end(buffName)
+}
+
+define mk_set_buffer_param
+{
+	buffName=$1
+	
+	if(focus_window(mk_bufferFileName(buffName))=="") return
+	
+	if("incremental_backup" in $mk_output_param)
+	set_incremental_backup($mk_output_param["incremental_backup"])
+
+	if("incremental_search_line" in $mk_output_param)
+	set_incremental_search_line($mk_output_param["incremental_search_line"])
+
+	if("show_line_numbers" in $mk_output_param)
+	set_show_line_numbers($mk_output_param["show_line_numbers"])
+
+	if("statistics_line" in $mk_output_param)
+	set_statistics_line($mk_output_param["statistics_line"])
+
+	if("fonts" in $mk_output_param)
+	{
+		fonts=split($mk_output_param["fonts"],"\n")
+		set_fonts(fonts[0],fonts[1],fonts[2],fonts[3])
+	}
+}
+
+define mk_special_insert_flag
+{
+	n=mk_currentBuffName()
+	if(n=="")
+	{
+		mk_insert_flag()
+	}
+}
+
+
+#open_in_tab("engine_filename")
+define mk_open_buffer
+{
+	buffName=$1
+	buffer_filename=mk_bufferFileName(buffName)
+	engine_filename=mk_engineFileName(buffName)
+	current_file=$file_path $file_name
+	server_param=""
+	if($server_name!="")
+	{
+		server_param="-svrname " $server_name
+	}
+
+	
+	if(focus_window(buffer_filename)=="")
+	{
+		geometry=""
+		if("geometry" in $mk_output_param) geometry=$mk_output_param["geometry"]
+		lm = "-lm \"" $mk_nedit_output_lang "\""
+		
+		tab=""
+		if ($mk_output_param["tab"]) tab="-untabbed "
+		
+		cmd = $mk_uc["nc"] " " server_param " " geometry " " tab " " lm " -create -do 'mk_set_buffer_param("buffName")' " buffer_filename
+		res=shell_command(cmd,"")
+		if($shell_cmd_status!=0)
+		{
+			dialog("buffer.nm : error while using nc:\n\n"res,"Cancel")
+			return 0
+		}
+	}
+	
+	if(focus_window(buffer_filename)=="")
+	{
+		dialog("buffer.nm : error openning buffer","Cancel")
+		return 0
+	}
+	
+	if(focus_window(engine_filename)=="")
+	{
+		focus_window(buffer_filename)
+		tab=""
+		if ($mk_output_param["tab"]) tab="-group " buffer_filename
+		
+		cmd = $mk_uc["nc"] " " server_param " " tab " -create " engine_filename
+		res=shell_command(cmd,"")
+		if($shell_cmd_status!=0)
+		{
+			dialog("buffer.nm : error while using nc:\n\n"res,"Cancel")
+			return 0
+		}
+	}
+	
+	if(focus_window(engine_filename)=="")
+	{
+		dialog("buffer.nm : error openning engine","Cancel")
+		return 0
+	}	
+	
+	res=focus_window(buffer_filename)
+	raise_window()
+	$mk_current_buffer=buffName
+	return res
+}
+
+#navigation throught opened buffer
+define mk_goto_buffer
+{
+	mk_special_insert_flag()
+	buffName=mk_currentBuffName()
+	if (buffName=="")
+	{
+		if($mk_current_buffer!=-1)
+		{
+			if(focus_window(mk_bufferFileName($mk_current_buffer))!="")
+			{
+				raise_window()
+				return
+			}
+		}
+		for(buffName in $mk_buffer_state)
+		{
+			if(focus_window(mk_bufferFileName(buffName))!="")
+			{
+				raise_window()
+				return
+			}
+		}
+	}
+	else
+	{
+		check=0
+		str1=""
+		str2=""
+		for (i in $mk_buffer_state)
+		{
+			if(i==buffName) check=1
+			else
+			{
+				if(check) str2=str2 i " "
+				else str1=str1 i " "
+			}
+		}
+		list=str2 str1
+		n=search_string(list,"[0-9]+",0,"regex")
+		end=$search_end
+		while (n!=-1)
+		{
+			num=substring(list,n,end)
+			if(focus_window(mk_bufferFileName(num))!="")
+			{
+				raise_window()
+				$mk_current_buffer=num
+				return
+			}
+			n=search_string(list,"[0-9]+",end,"regex")
+			end=$search_end
+		}
+	}
+}
+
+define mk_buffer_selection
+{
+	
+	if(($selection_start==0) && ($selection_end==$text_length))
+	{
+		n=search($mk_buffer_info["regex"],0,"regex")
+		if(n!=0) return get_selection()
+		beg=$search_end
+		end=search($mk_buffer_end_regex,$text_length,"backward","regex")
+		if($search_end!=$text_length) return get_selection()
+		return get_range(beg,end)
+	}
+	else
+	{
+		return get_selection()
+	}
+}
+
+# get the path from the nedit buffer info
+define mk_buffer_path
+{
+	inf=mk_get_buffer_info()
+	if("local" in inf) return inf["local"]
+	if("path" in inf) return inf["path"]
+	return ""
+}
+
+define mk_get_buffer_info
+{
+	res=$empty_array
+	n=search($mk_buffer_info["regex"],0,"regex")
+	if(n!=0) return res
+	str=get_range(n,$search_end)
+	
+	res["date"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["date"],"regex")
+	res["hour"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["hour"],"regex")
+	res["reallang"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["lang"],"regex")
+	res["command"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["command"],"regex")
+	res["host"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["host"],"regex")
+	res["path"]=replace_in_string(str, $mk_buffer_info["regex"],"\\"$mk_buffer_info["path"],"regex")
+	
+	lang_param=replace_in_string(res["reallang"], "(.*)\\[(.*)\\]","\\2","regex")
+	if(lang_param!="")
+	{
+		res["lang"]=replace_in_string(res["reallang"], "(.*)\\[(.*)\\]","\\1","regex")
+		res["lang param"]=lang_param
+	}
+	else
+	{
+		res["lang"]=res["reallang"]
+	}
+	
+	n=search($mk_local_directory["regex"],$cursor,"regex","backward")
+	if(n==-1) return res
+
+	if(($cursor>=n) && ($cursor<=$search_end))
+	{
+		str=get_range(n,$search_end)
+		path1=replace_in_string(str,$mk_local_directory["regex"],"\\"$mk_local_directory["path1"],"regex")
+path2=replace_in_string(str,$mk_local_directory["regex"],"\\"$mk_local_directory["path2"],"regex")
+		if(path1==path2) res["local"]=path1
+	}
+	return res
+}
+
+#init nedit_output (set the file path)
+define mk_init_buffer
+{
+	$mk_buffer_info["regex"]="^(?:NEdit buffer: ((?#date:).+), ((?#hour:).+)\n)(?:language: ((?#lang:).+)\n)?(?:command: ((?#command:).+)\n)(?:host: ((?#host:).+)\n)(?:path: ((?#path:).+)\n)"
+	
+	tmp=mk_ref_number($mk_buffer_info["regex"],"date")
+	$mk_buffer_info["date"]=tmp["index"]
+	tmp=mk_ref_number($mk_buffer_info["regex"],"lang")
+	$mk_buffer_info["lang"]=tmp["index"]
+	tmp=mk_ref_number($mk_buffer_info["regex"],"hour")
+	$mk_buffer_info["hour"]=tmp["index"]
+	tmp=mk_ref_number($mk_buffer_info["regex"],"command")
+	$mk_buffer_info["command"]=tmp["index"]
+	tmp=mk_ref_number($mk_buffer_info["regex"],"host")
+	$mk_buffer_info["host"]=tmp["index"]
+	tmp=mk_ref_number($mk_buffer_info["regex"],"path")
+	$mk_buffer_info["path"]=tmp["index"]
+
+	$mk_buffer_end="...over"
+	$mk_buffer_end_regex="\\.\\.\\.over\n*"
+	$mk_buffer_baseName=$server_name "_" $MK_ENV_VAR["HOST"] "_" $MK_ENV_VAR["USER"] 
+	
+	$mk_buffer_cmd=""
+	$mk_buffer_head=""
+	
+	# 0 not in use
+	# 1 in use
+	$mk_buffer_state=$empty_array
+
+	$mk_current_buffer=0
+
+	# regular expression to use to match a local directorry
+	$mk_local_directory["regex"]="^(?:.*(?:(?:Entering directory)|(?:Entre dans le répertoire)) `((?#path1:).+)'\n)(?:^.*\n)*?(?:^.*(?:(?:Leaving directory)|(?:Quitte le répertoire)) `((?#path2:).+)'$)"
+	tmp=mk_ref_number($mk_local_directory["regex"],"path1")
+	$mk_local_directory["path1"]=tmp["index"]
+	tmp=mk_ref_number($mk_local_directory["regex"],"path2")
+	$mk_local_directory["path2"]=tmp["index"]
+}
+
+
+#init
+mk_init_buffer()
+

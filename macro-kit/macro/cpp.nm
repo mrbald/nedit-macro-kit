@@ -1,0 +1,175 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: C++ tools                              #
+##################################################
+
+# get include path
+# This function use personnal configuration stuff... To be simplified
+define mk_include_path
+{
+	res = shell_command("cd " $1 " ; myMake.csh include_paths","")
+	replace_regex = "((?n.*))^(INCPATH\\s*=\\s*)(.*)$((?n.*))"
+	res = replace_in_string(res,replace_regex,"\\3","regex")
+	if(res != "")
+	{
+		$mk_last_include_path=res
+		return $mk_last_include_path
+	}
+	
+	res = shell_command("cd " $1 " ; qmakeSubDirectory.py","")
+	replace_regex = "((?n.*))^(SUBDIRS\\s*=\\s*)(.*)$((?n.*))"
+	res = replace_in_string(res,replace_regex,"\\3","regex")
+	if(res != "")
+	{
+		$mk_last_include_path=res
+		return $mk_last_include_path
+	}
+	
+	return $mk_last_include_path
+}
+
+
+# goto Makefile
+define mk_goto_makefile
+{
+	path = $file_path
+	if(path=="") return
+	
+	command="cd  " mk_ssc(path) ";" $mk_uc["ls"] " Makefile* makefile*"
+	res = mk_shell_command(command)
+	if(res=="\n") return
+	
+	#one result
+	first_newline=search_string(res,"\n",0,"regex")
+	if(first_newline==(length(res)-1))
+	{
+		filename = mk_filename(substring(res,0,length(res)-1),path)
+		mk_open_file(filename)
+	}
+	#several result
+	else
+	{
+		#Makefile
+		makefile_name = "Makefile"
+		n=search_string(res,"(?:/|^)" mk_literal(makefile_name) "$",0,"regex")
+		if(n!=-1)
+		{
+			filename = mk_filename(makefile_name,path)
+			mk_open_file(filename)
+			return
+		}
+
+		#Makefile.$QMAKESUFFIX
+		suffix = getenv("QMAKESUFFIX")
+		if(suffix!="")
+		{
+			makefile_name = "Makefile." suffix
+			n=search_string(res,"(?:/|^)" mk_literal(makefile_name) "$",0,"regex")
+			if( (suffix!="") && (n!=-1) )
+			{
+				filename = mk_filename(makefile_name,path)
+				mk_open_file(filename)
+				return
+			}
+		}
+		
+		#others
+		makefile_name=list_dialog("Choose a file",res,"ok","dismiss")
+		if(($list_dialog_button==1) && (makefile_name!=""))
+		{
+			filename = mk_filename(makefile_name,path)
+			mk_open_file(filename)
+			return
+		}
+	}
+}
+
+
+
+# create constructor
+define mk_create_constructor
+{
+	if($selection_start==-1)
+	{
+		return
+	}
+	
+	look_for_class="^\\s*class\\s+(\\l\\w*)\\s*(:.*)?$"
+	n=search(look_for_class,$cursor,"regex","backward")
+	if(n==-1)
+	{
+		dialog("Can't find class name")
+		return
+	}
+	n=search("class (\\l\\w*)",n,"regex","forward")
+	class_line = get_range(n,$search_end)
+	class_name=replace_in_string(class_line,look_for_class,"\\1","regex")
+	
+	list_declaration=""
+	list_assignement=""
+	
+	str=get_selection()
+	type_declaration = "^\\s*(.+?)\\s+(\\l\\w*)\\s*;\\s*$"
+	
+	beg=search_string(str,type_declaration,0,"regex")
+	end=$search_end
+	while (beg!=-1)
+	{
+		line=substring(str,beg,end)
+		type=replace_in_string(line,type_declaration,"\\1","regex")
+		name=replace_in_string(line,type_declaration,"\\2","regex")
+		
+		list_declaration= list_declaration type " _" name ", "
+		list_assignement= list_assignement "\t" name "(_" name "),\n"
+		
+		beg=search_string(str,type_declaration,end,"regex")
+		end=$search_end
+	}
+	
+	prototype="(" substring(list_declaration,0,length(list_declaration)-2) ")"
+	assignement=":\n" substring(list_assignement,0,length(list_assignement)-2)
+	res = class_name prototype assignement " { }"
+	dialog(res "\n => in the clipboard.","ok")
+	string_to_clipboard(res)
+}
+
+# add print number
+define mk_add_cerr_num
+{
+	label=""
+	if($n_args>0) label="\""$1"\": \"<<"
+
+	if(($selection_start==-1) || ($selection_left!=-1)) return
+	str=get_selection()
+	re="^(?!\\s*//.*$)(\\s*)(.*);(\\s*)\n"
+	beg=search_string(str,re,0,"regex")
+	end=$search_end
+	count=0
+	while (beg!=-1)
+	{
+		errLine="std::cerr<<"label count"<<std::endl;\n"
+		sub=substring(str,beg,end)
+		line=replace_in_string(sub,re,"\\1\\2;\\3\n\\1"errLine,"regex")
+		str=replace_substring(str,beg,end,line)
+		beg=search_string(str,re,beg+length(line),"regex")
+		end=$search_end
+		count++
+	}
+	replace_selection(str)
+}
+
+# add #ifdef ... #endif in the windows
+define mk_add_ifndef
+{
+	tmp=string_dialog("#ifndef:","ok","dismiss")
+	if( ($string_dialog_button!=1) || (tmp=="") ) return
+	replace_range(0,0,"#ifndef __" tmp "__\n#define __" tmp "__\n")
+	replace_range($text_length,$text_length,"\n#endif /* __" tmp "__ */\n")
+}
+
+define mk_init_cpp
+{
+	$mk_last_include_path=""
+}
+
+mk_init_cpp()

@@ -1,0 +1,1382 @@
+! Preferences file for NEdit
+!
+! This file is overwritten by the "Save Defaults..." command in NEdit 
+! and serves only the interactively settable options presented in the NEdit
+! "Preferences" menu.  To modify other options, such as key bindings, use 
+! the .Xdefaults file in your home directory (or the X resource 
+! specification method appropriate to your system).  The contents of this 
+! file can be moved into an X resource file, but since resources in this file
+! override their corresponding X resources, either this file should be 
+! deleted or individual resource lines in the file should be deleted for the
+! moved lines to take effect.
+
+nedit.fileVersion: 5.5
+nedit.shellCommands: \
+	spell::s:ED:\n\
+		(cat;echo "") | spell\n\
+	wc::w:ED:\n\
+		wc | awk '{print $1 " lines, " $2 " words, " $3 " characters"}'\n\
+	sort::o:EX:\n\
+		sort\n\
+	number lines::n:AW:\n\
+		nl -ba\n\
+	make::m:W:\n\
+		make\n\
+	expand::p:EX:\n\
+		expand --tabs=2\n\
+	unexpand::u:EX:\n\
+		unexpand --tabs=3\n\
+	indent::p:EX:\n\
+		indent -l1000 -ci0 -bli0 -i4 -ut -ts4 -pi4 -sbi4 -sob -ip0 -ppi 2 -npsl\n
+nedit.macroCommands: \
+	Edit (Mk)>copy line:Ctrl+Alt+C::: {\n\
+		#f: Copie la ligne courrante.\n\
+		#e: Copy the current line.\n\
+		copy_line()\n\
+	}\n\
+	Edit (Mk)>cut line:Ctrl+Alt+X::: {\n\
+		#f: Coupe la ligne courrante. Si la ligne est vide, le clipboard n'est pas modifié.\n\
+		#e: Cut the current line. If the current line is empty, the clipboard is not modified.\n\
+		cut_line()\n\
+	}\n\
+	Edit (Mk)>paste line:Ctrl+Alt+V::: {\n\
+		#f: Colle le clipboard courrant (idem CTRL+V).\n\
+		#e: Paste (idem CTRL+V).\n\
+		paste_line()\n\
+	}\n\
+	Edit (Mk)>Duplicate block:Alt+D::: {\n\
+		#f: Duplique la sélection.\n\
+		#f: S'il n'y a pas de sélection, duplique la ligne courrante.\n\
+		#e: Duplicate the selection. If there is no selection, duplicate the current line.\n\
+		mk_copy_block()\n\
+	}\n\
+	Edit (Mk)>Duplicate and comment block:Ctrl+Alt+D::: {\n\
+		#f: Duplique et commente la sélection.\n\
+		#f: S'il n'y a pas de sélection, duplique et commente la ligne courrante\n\
+		#e: Duplicate and comment the selection. If there is no selection, duplicate and comment the current line.\n\
+		mk_copy_and_comment_block()\n\
+	}\n\
+	Edit (Mk)>Fill selection:Ctrl+Alt+F::R: {\n\
+		#f: Remplit la sélection en répétant la même chaine de caractères.\n\
+		#e: Fill selection with a given string.\n\
+		fill_selection()\n\
+	}\n\
+	Edit (Mk)>replace in rectangular selection:Alt+J::R: {\n\
+		#f: Remplace chaque ligne de la sélection rectangulaire par une chaîne de caractères.\n\
+		#e: Replace each line of a rectangular selection with a given string.\n\
+		mk_replace_in_rectangular_selection()\n\
+	}\n\
+	Edit (Mk)>replace by selection:Ctrl+B::R: {\n\
+		#f: Replace la sélection par le contenu du clipboard.\n\
+		#e: Replace the selection with the clipboard.\n\
+		mk_replace_selection()\n\
+	}\n\
+	Edit (Mk)>enumeration:::R: {\n\
+		#f: Enumère la sélection (insère un nombre au début de chaque ligne).\n\
+		#e: Enumerate selection (insert a number at the beginning of each line).\n\
+		mk_enumeration(" - ")\n\
+	}\n\
+	Edit (Mk)>get regex:::R: {\n\
+		#f: récupère tous les passages d'un documents correspondant à une expression régulière\n\
+		#e: get all the match in a document for the given regular expression.\n\
+		mk_get_regex()\n\
+	}\n\
+	Edit (Mk)>get file list:Shift+Ctrl+Alt+L::: {\n\
+		#f: copie une liste de nom de fichier dans le clipboard\n\
+		#e: copy a file list into clipboard\n\
+		mk_filelist_to_clipboard()\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add block {}:Alt+B::: {\n\
+		#f: ajoute deux accolades en respectant la tabulation.\n\
+		#f: Si une sélection est active, elle est mise entre accolade et indentée.\n\
+		#e: Insert two curly braces. If a selection exist, put this selection into curly braces.\n\
+		mk_add_block("{","}")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add (...):Shift+Alt+0::: {\n\
+		#f: Entoure la sélection de parenthèses.\n\
+		#f: S'il n'y a pas de sélection, ajoute des parenthèses vides.\n\
+		#e: Put the selection in parentheses (or add empty parentheses if no selection).\n\
+		mk_add_structure("(",")")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add {...}:Shift+Alt+Bracketright::: {\n\
+		#f: Entoure la sélection d'accolades.\n\
+		#f: S'il n'y a pas de sélection, ajoute des accolades vides.\n\
+		#e: Put the selection in curly braces (or add empty curly braces if no selection).\n\
+		mk_add_structure("{","}")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add [...]:Alt+Bracketright::: {\n\
+		#f: Entoure la sélection de crochets.\n\
+		#f: S'il n'y a pas de sélection, ajoute des crochets vides.\n\
+		#e: Put the selection in square brackets (or add empty square brackets if no selection).\n\
+		mk_add_structure("[","]")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add " ":Shift+Alt+Apostrophe::: {\n\
+		#f: Entoure la sélection de guillemets.\n\
+		#f: S'il n'y a pas de sélection, ajoute des guillemets vides.\n\
+		#e: Put the selection in guillemets (or add empty guillemets if no selection).\n\
+		mk_add_structure("\\"","\\"")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add ' ':Alt+Apostrophe::: {\n\
+		#f: Entoure la sélection d'apostrophes.\n\
+		#f: S'il n'y a pas de sélection, ajoute des apostrophes vides.\n\
+		#e: Put the selection in apostrophes (or add empty apostrophes if no selection).\n\
+		mk_add_structure("\\'","\\'")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add ` `:Shift+Ctrl+Grave::: {\n\
+		#f: Entoure la sélection d'accents graves.\n\
+		#f: S'il n'y a pas de sélection, ajoute des accents graves vides.\n\
+		#e: Put the selection in grave accents (or add empty grave accents if no selection).\n\
+		mk_add_structure("\\`","\\`")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add <..:Shift+Alt+Period::: {\n\
+		#f: Entoure la sélection d'inférieur et supérieur.\n\
+		#f: S'il n'y a pas de sélection, ajoute inférieur et supérieur.\n\
+		#e: Put the selection in inferior/superior (or add empty inferior/superior if no selection).\n\
+		mk_add_structure("\\<","\\>")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add ``:Alt+Grave::: {\n\
+		#f: Entoure la sélection de ``.\n\
+		#f: S'il n'y a pas de sélection, insert ``.\n\
+		#e: Put the selection in`` (or add empty `` if no selection).\n\
+		mk_add_structure("`","`")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add $$:Shift+Alt+4::: {\n\
+		#f: Entoure la sélection de $.\n\
+		#f: S'il n'y a pas de sélection, insert $.\n\
+		#e: Put the selection in $$ (or add empty $$ if no selection).\n\
+		mk_add_structure("$","$")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add **:Shift+Alt+8::: {\n\
+		#f: Entoure la sélection de *.\n\
+		#f: S'il n'y a pas de sélection, insert *.\n\
+		#e: Put the selection in ** (or add empty ** if no selection).\n\
+		mk_add_structure("*","*")\n\
+	}\n\
+	Edit (Mk)>Structural characters>Add \\\\:Alt+Backslash::: {\n\
+		#f: Entoure la sélection de \\.\n\
+		#f: S'il n'y a pas de sélection, insert \\\\.\n\
+		#e: Put the selection in \\\\ (or add empty \\\\ if no selection).\n\
+		mk_add_structure("\\\\","\\\\")\n\
+	}\n\
+	Move (Mk)>discrete scroll up:Alt+Prior::: {\n\
+		#f: Scroll d'une demi-fenêtre vers le haut sans bouger le curseur.\n\
+		#e: Scroll up without moving the cursor.\n\
+		scroll_up($n_display_lines/2)\n\
+	}\n\
+	Move (Mk)>discrete scroll down:Alt+Next::: {\n\
+		#f: Scroll d'une demi-fenêtre vers le bas sans bouger le curseur.\n\
+		#e: Scroll down without moving the cursor.\n\
+		scroll_down($n_display_lines/2)\n\
+	}\n\
+	Move (Mk)>begin of selection:Alt+Home::R: {\n\
+		#f: Place le curseur au début de la sélection.\n\
+		#e: Move the cursor at the beginning of the selection.\n\
+		beginning_of_selection()\n\
+	}\n\
+	Move (Mk)>end of selection:Alt+End::R: {\n\
+		#f: Place le curseur à la fin de la sélection.\n\
+		#e: Move the cursor at the end of the selection.\n\
+		end_of_selection()\n\
+	}\n\
+	Move (Mk)>Move among file group:Alt+Z::: {\n\
+		#f: Bascule d'un fichier d'en-tête vers un fichier source.\n\
+		#f: Les chemins d'accés sont configurables dans le fichiers <B>macro_parameters.nm</B>\n\
+		#e: swap between header and source files.\n\
+		mk_move_in_group()\n\
+	}\n\
+	Move (Mk)>next modified win:Ctrl+Alt+Up::: {\n\
+		#f: Cherche la prochaine fenêtre modifiée.\n\
+		#f: Cette fonction est très utile après avoir éxécuté "replace grep lines".\n\
+		#e: Look for next modified windows (useful after using macro "replace grep lines").\n\
+		mk_next_modified_win()\n\
+	}\n\
+	Move (Mk)>previous modified win:Ctrl+Alt+Down::: {\n\
+		#f: Cherche la prochaine fenêtre modifiée.\n\
+		#f: Cette fonction est très utile après avoir éxécuté "replace grep lines".\n\
+		#e: Look for next modified windows (useful after using macro "replace grep lines").\n\
+		mk_prev_modified_win()\n\
+	}\n\
+	Move (Mk)>next windows:Ctrl+Alt+Right::: {\n\
+		#f: Ouvre la fenetre suivante\n\
+		#e: open next windows.\n\
+		raise_window("next")\n\
+	}\n\
+	Move (Mk)>previous windows:Ctrl+Alt+Left::: {\n\
+		#f: Ouvre la fenetre precedente.\n\
+		#e: open previous windows.\n\
+		raise_window("previous")\n\
+	}\n\
+	Move (Mk)>next action path:Shift+Ctrl+Alt+Up::: {\n\
+		#f: Ouvre une fenêtre dans le dossier de travail suivant.\n\
+		#e: open a windows in the next working directory\n\
+		mk_next_action_path()\n\
+	}\n\
+	Move (Mk)>previous action path:Shift+Ctrl+Alt+Down::: {\n\
+		#f: Ouvre une fenêtre dans le dossier de travail suivant.\n\
+		#e: open a windows in the next working directory\n\
+		mk_prev_action_path()\n\
+	}\n\
+	Move (Mk)>open local file:Alt+O::: {\n\
+		#f: Ouvre les fichiers locaux\n\
+		#e: Open local files\n\
+		mk_open_local_file()\n\
+	}\n\
+	Move (Mk)>open file with mask:Shift+Alt+O::: {\n\
+		#f: Filtre les fichiers deja ouverts\n\
+		#e:Apply a regex filter on allready-open files\n\
+		mk_open_regex_file()\n\
+	}\n\
+	Move (Mk)>open file with predefined mask:Shift+Ctrl+Alt+O::: {\n\
+		#f: Filtre les fichiers deja ouverts\n\
+		#e:Apply a regex filter on allready-open files\n\
+		mk_open_regex_file("dialog")\n\
+	}\n\
+	Move (Mk)>goto main file:F4::: {\n\
+		#f: Ouvre le fichiers projet local.\n\
+		#e: Open the local project file.\n\
+		mk_insert_flag()\n\
+		mk_goto_main_file()\n\
+	}\n\
+	Move (Mk)>goto global main file:Shift+F4::: {\n\
+		#f: Ouvre le fichiers projet global.\n\
+		#e: Open the global project file.\n\
+		mk_insert_flag()\n\
+		mk_goto_main_file("global")\n\
+	}\n\
+	Move (Mk)>Flags dialog:Shift+Ctrl+Alt+F::: {\n\
+		#f: Choix parmis les flags existants.\n\
+		#e: choose among existing flags.\n\
+		mk_flag_dialog()\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 1:Ctrl+Alt+1::: {\n\
+		#f: Insère le repère 1. Un repère mémorise le nom du fichier et la position du curseur.\n\
+		#f: Pour revenir au repere i, utiliser ALT+i.\n\
+		#e: Insert flag 1. A flag memorize the file name and the line number.\n\
+		#e: To go to flag i, use ALT+i.\n\
+		mk_insert_flag(1)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 2:Ctrl+Alt+2::: {\n\
+		#f: Insère le repère 2.\n\
+		#e: Insert flag 2.\n\
+		mk_insert_flag(2)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 3:Ctrl+Alt+3::: {\n\
+		#f: Insère le repère 3.\n\
+		#e: Insert flag 3.\n\
+		mk_insert_flag(3)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 4:Ctrl+Alt+4::: {\n\
+		#f: Insère le repère 4.\n\
+		#e: Insert flag 4.\n\
+		mk_insert_flag(4)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 5:Ctrl+Alt+5::: {\n\
+		#f: Insère le repère 5.\n\
+		#e: Insert flag 5.\n\
+		mk_insert_flag(5)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 6:Ctrl+Alt+6::: {\n\
+		#f: Insère le repère 6.\n\
+		#e: Insert flag 6.\n\
+		mk_insert_flag(6)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 7:Ctrl+Alt+7::: {\n\
+		#f: Insère le repère 7.\n\
+		#e: Insert flag 7.\n\
+		mk_insert_flag(7)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 8:Ctrl+Alt+8::: {\n\
+		#f: Insère le repère 8.\n\
+		#e: Insert flag 8.\n\
+		mk_insert_flag(8)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 9:Ctrl+Alt+9::: {\n\
+		#f: Insère le repère 9.\n\
+		#e: Insert flag 9.\n\
+		mk_insert_flag(9)\n\
+	}\n\
+	Move (Mk)>Flags>insert flag 0:Ctrl+Alt+0::: {\n\
+		#f: Insère le repère 0\n\
+		#e: Insert flag 0.\n\
+		mk_insert_flag(0)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 1:Alt+1::: {\n\
+		#f: va au repère 1 (s'il existe).\n\
+		#e: Go to flag 1.\n\
+		mk_goto_flag(1)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 2:Alt+2::: {\n\
+		#f: va au repère 2.\n\
+		#e: Go to flag 2.\n\
+		mk_goto_flag(2)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 3:Alt+3::: {\n\
+		#f: va au repère 3.\n\
+		#e: Go to flag 3.\n\
+		mk_goto_flag(3)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 4:Alt+4::: {\n\
+		#f: va au repère 4.\n\
+		#e: Go to flag 4.\n\
+		mk_goto_flag(4)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 5:Alt+5::: {\n\
+		#f: va au repère 5.\n\
+		#e: Go to flag 5.\n\
+		mk_goto_flag(5)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 6:Alt+6::: {\n\
+		#f: va au repère 6.\n\
+		#e: Go to flag 6.\n\
+		mk_goto_flag(6)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 7:Alt+7::: {\n\
+		#f: va au repère 7.\n\
+		#e: Go to flag 7.\n\
+		mk_goto_flag(7)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 8:Alt+8::: {\n\
+		#f: va au repère 8.\n\
+		#e: Go to flag 8.\n\
+		mk_goto_flag(8)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 9:Alt+9::: {\n\
+		#f: va au repère 9.\n\
+		#e: Go to flag 9.\n\
+		mk_goto_flag(9)\n\
+	}\n\
+	Move (Mk)>Flags>goto flag 0:Alt+0::: {\n\
+		#f: va au repère 0\n\
+		#e: Go to flag 0.\n\
+		mk_goto_flag(0)\n\
+	}\n\
+	Comment (Mk)>swap comment 1:Alt+Q::: {\n\
+		#f: Ajoute ou enlève le commentaire par défaut à la sélection\n\
+		#f: Le choix est effectué en fonction de la première ligne dans la sélection:\n\
+		#f: Si elle commence par un commentaire, alors les commentaires sont supprimés,\n\
+		#f: Sinon, des commentaires sont rajoutés.\n\
+		#f: S'il n'y a pas de sélection, la commande s'applique à la ligne.\n\
+		#f: Le commentaire est choisi automatiquement en fonction du langage.\n\
+		#f: Les caractères de commentaires sont configurables dans le fichier <B>macro_parameters.nm</B>.\n\
+		#e: comment or uncomment the selection with the first comment characters.\n\
+		#e: The choice is made by testing wether the first line of the selection is commented or not.\n\
+		#e: If no selection, the current line is commented or uncommented.\n\
+		#e: The comment characters are set in the file : <B>macro_parameters.nm</B>.\n\
+		mk_swap_comment(1)\n\
+	}\n\
+	Comment (Mk)>swap comment 2:Shift+Alt+Q::: {\n\
+		#f: Ajoute ou enlève le deuxième commentaire à la sélection\n\
+		#f: Le choix est effectué en fonction de la première ligne dans la sélection:\n\
+		#f: Si elle commence par un commentaire, alors les commentaires sont supprimés,\n\
+		#f: Sinon, des commentaires sont rajoutés.\n\
+		#f: S'il n'y a pas de sélection, la commande s'applique à la ligne.\n\
+		#f: Le commentaire est choisi automatiquement en fonction du langage.\n\
+		#f: Les caractères de commentaires sont configurables dans le fichier <B>macro_parameters.nm</B>.\n\
+		#e: Comment or uncomment the selection with the second comment characters.\n\
+		#e: The choice is made by testing wether the first line of the selection is commented or not.\n\
+		#e: If no selection, the current line is commented or uncommented.\n\
+		#e: The comment characters are set in the file : <B>macro_parameters.nm</B>.\n\
+		mk_swap_comment(2)\n\
+	}\n\
+	Comment (Mk)>comment:Alt+Period::: {\n\
+		#f: Ajoute des commentaires à la sélection\n\
+		#f: S'il n'y a pas de sélection, la commande s'applique à la ligne.\n\
+		#f: Le commentaire est choisi automatiquement en fonction du langage.\n\
+		#f: Les caractères de commentaires sont configurables dans le fichier <B>macro_parameters.nm</B>.\n\
+		#e: Comment the selection with the first comment characters.\n\
+		#e: If no selection, the current line is commented or uncommented.\n\
+		#e: The comment characters are set in the file : <B>macro_parameters.nm</B>.\n\
+		mk_comment(mk_find_comment())\n\
+	}\n\
+	Comment (Mk)>uncomment:Alt+Comma::: {\n\
+		#f: Enlève des commentaires à la sélection\n\
+		#f: S'il n'y a pas de sélection, la commande s'applique à la ligne.\n\
+		#f: Le commentaire est choisi automatiquement en fonction du langage.\n\
+		#f: Les caractères de commentaires sont configurables dans le fichier <B>macro_parameters.nm</B>.\n\
+		#e: Uncomment the selection with the first comment characters.\n\
+		#e: If no selection, the current line is commented or uncommented.\n\
+		#e: The comment characters are set in the file : <B>macro_parameters.nm</B>.\n\
+		mk_uncomment(mk_find_comment())\n\
+	}\n\
+	Comment (Mk)>nice line comment:Shift+Ctrl+Alt+Slash::: {\n\
+		#f: Entoure la sélection de "jolie" commentaires.\n\
+		#e: Put some nice comments around the selection.\n\
+		mk_nice_line_comment()\n\
+	}\n\
+	Advanced (Mk)>ctags>local definitions:Shift+Ctrl+Alt+G::: {\n\
+		#f: Ouvre une fenêtre qui liste toutes les fonctions d'un fichier (avec ctags).\n\
+		#f: Les paramêtres utilisés sont dans le fichier <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#f: Pour plus de précision, consultez l'aide de la commande unix ctags.\n\
+		#f: PS: utilisez Exuberant Ctags.\n\
+		#e: Open a windows which list all the functions declared in a file (using ctags).\n\
+		#e: You can change the parameters in <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#e: PS: use Exuberant Ctags.\n\
+		mk_local_tags()\n\
+	}\n\
+	Advanced (Mk)>ctags>global definitions:Ctrl+Alt+G::: {\n\
+		#f: Ouvre une fenêtre qui liste toutes les symboles d'un dossier de travail (avec ctags).\n\
+		#f: Les paramêtres utilisés sont dans le fichier <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#f: Pour plus de précision, consultez l'aide de la commande unix ctags.\n\
+		#f: PS: utilisez Exuberant Ctags.\n\
+		#e: Open a windows which list all the symbols declared in working directory (using ctags).\n\
+		#e: You can change the parameters in <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#e: PS: use Exuberant Ctags.\n\
+		mk_global_tags()\n\
+	}\n\
+	Advanced (Mk)>ctags>find_definition dialog:Shift+Ctrl+D::: {\n\
+		#f: Si rien n'est selectionné, une boite de dialogue demande quel tag chercher.\n\
+		#e: If nothing selected, a dialog box pop up asking for which tag to use.\n\
+		mk_find_definition()\n\
+	}\n\
+	Advanced (Mk)>ctags>reload tags file:Ctrl+Alt+T::: {\n\
+		#f: Charge le fichier se trouvant dans le <B>dossier de travail</B>.\n\
+		#e: Reload tags file.\n\
+		mk_load_tags_file()\n\
+	}\n\
+	Advanced (Mk)>ctags>create tags file:Shift+Ctrl+Alt+T::: {\n\
+		#f: Crée et charge un nouveau fichier tags.\n\
+		#e: create and load a new tags file.\n\
+		mk_load_tags_file("create")\n\
+	}\n\
+	Advanced (Mk)>Search>find file:F5::: {\n\
+		#f: Recherche recursive de fichiers.\n\
+		#e: Recursive search of files.\n\
+		mk_find_file()\n\
+	}\n\
+	Advanced (Mk)>Search>grep:F6::: {\n\
+		#f: Cherche une chaine de caractère dans le <B>dossier de travail</B> (et éventuellement dans ces sous-dossiers).\n\
+		#f: Si une sélection existe, la recherche s'effectue avec cette dernière.\n\
+		#f: Sinon, une boite de dialogue est ouverte.\n\
+		#f: Le résultat est envoyer dans le <B>fichier temporaire</B> de NEdit.\n\
+		#e: Look for an expression in the <B>working directory</B> (eventually recursively).\n\
+		mk_grep_dialog()\n\
+	}\n\
+	Advanced (Mk)>Search>grep regex:Shift+F6::: {\n\
+		#f: Cherche une expression régulière dans le <B>dossier de travail</B> (et éventuellement dans ces sous-dossiers).\n\
+		#f: Si une sélection existe, la recherche s'effectue avec cette dernière.\n\
+		#f: Sinon, une boite de dialogue est ouverte.\n\
+		#f: Le résultat est envoyer dans le <B>fichier temporaire</B> de NEdit.\n\
+		#e: Look for an expression in the <B>working directory</B> (eventually recursively).\n\
+		mk_grep_dialog("regex")\n\
+	}\n\
+	Advanced (Mk)>Search>replace grep lines:Alt+F6::: {\n\
+		#f: Cette fonctionnalité est assez puissante. Elle permet, après avoir modifié\n\
+		#f: les lignes résultantes de la macro-fonction Advanced>grep>grep, de renvoyer dans les\n\
+		#f: fichiers concernés les modifications effectuées. Par exemple, si vous executez la macro\n\
+		#f: Advanced>grep>grep avec "dinoaure", et si vous changer "dinoaure" par "dinosaure", il, ne\n\
+		#f: vous reste plus qu'à sélectionner les lignes modifiées et à executer cette macros pour\n\
+		#f: que la modification est réellement lieu.\n\
+		#e: After having changed the result of the "grep" macro, you can send back the modification using this macro.\n\
+		mk_replace_grep_line()\n\
+	}\n\
+	Advanced (Mk)>Search>grep settings:Shift+Alt+F6::: {\n\
+		#f: Change les paramètres de Advanced>grep>grep. Les paramètres sont les suivants:<BR>\n\
+		#f: - Le masque: détermine quels fichiers sont sujets à la recherche.<BR>\n\
+		#f: - Expression régulière: détermine si la recherche utilise les expressions régulières, ou une simple comparaison litéralle.<BR>\n\
+		#f: Les paramètres par défaut peuvent être changés dans le fichier <B>macro_parameters.nm</B>\n\
+		#e: Change the parameters of the "grep" macro: the file masks and regex/literal.\n\
+		#e: The default values can be change in the <B>macro_parameters.nm</B>.<BR>\n\
+		mk_set_grep_parameter()\n\
+	}\n\
+	Advanced (Mk)>Expander>expand:Ctrl+Return::: {\n\
+		#f: Fonctionnalité TRES utile. Elle permet de définir des raccourcis clavier.\n\
+		#f: Par exemple, en C++, "\\un" peut être étendu à "using namespace ".\n\
+		#f: Pour plus d'information, ouvrez (et modifiez) le fichier expander.data.\n\
+		#e: Expand a shorcut. For instance, "\\un" is extended to "using namespace".\n\
+		#e: Try to open and modify the file "expander.data".\n\
+		mk_expand()\n\
+	}\n\
+	Advanced (Mk)>Expander>expand with selection:Ctrl+Alt+E::: {\n\
+		#f: todo\n\
+		#e: todo\n\
+		mk_add_expstring()\n\
+	}\n\
+	Advanced (Mk)>Expander>expand with selection (dialog):Shift+Ctrl+Alt+E::: {\n\
+		#f: todo\n\
+		#e: todo\n\
+		mk_add_expstring("dialog")\n\
+	}\n\
+	Advanced (Mk)>Expander>template file:Alt+Return::: {\n\
+		#f: Créer un fichier template.\n\
+		#e: create a new template file.\n\
+		mk_template_file()\n\
+	}\n\
+	Advanced (Mk)>Expander>open expander.data:Shift+Ctrl+Alt+E::: {\n\
+		#f: Ouvre le fichier de configuration de l'expander.\n\
+		#e: Open the file "expander.data".\n\
+		mk_open_expander_file()\n\
+	}\n\
+	Advanced (Mk)>Completion>completion:Alt+Space::: {\n\
+		#f: Complète le mot courrant.\n\
+		#f: Pour cela, la macro utilise les mots présent dans la fenètre courrante, ainsi que les dictionnaires.\n\
+		#f: Les dictionnaires dependent du langage utilisé. Vous pouvez en fabriquer d'autres\n\
+		#f: (dans ~/.neditutil/customize/dicos/\n\
+		#f: et rajouter leurs noms dans le fichiers <B>macro_parameters.nm</B>.\n\
+		#e: completion. Can also use dictionnary.\n\
+		mk_completion("local","dico")\n\
+	}\n\
+	Advanced (Mk)>Completion>completion (backward):Shift+Alt+Space::: {\n\
+		#f: Idem Advanced>Completion>Completion, mais revient en arrière.\n\
+		#e: backward completion.\n\
+		mk_completion("local","dico","backward")\n\
+	}\n\
+	Advanced (Mk)>Completion>special completion:Ctrl+Space::: {\n\
+		#f: Complète le mot courrant en utilisant les éventuelles tags générer par ctags.\n\
+		#e: Special completion with tags name.\n\
+		mk_completion("global ctags")\n\
+	}\n\
+	Advanced (Mk)>Completion>special completion (backward):Shift+Ctrl+Space::: {\n\
+		#f: Idem Advanced>Completion>Special Completion, mais revient en arrière.\n\
+		#e: Backward special completion.\n\
+		mk_completion("global ctags","backward")\n\
+	}\n\
+	Advanced (Mk)>Completion>file completion:Ctrl+Alt+Space::: {\n\
+		#f: Complète le mot courrant en utilisant les noms des fichiers du répertoire courrant\n\
+		#e: Completion with file names.\n\
+		mk_completion("file name")\n\
+	}\n\
+	Advanced (Mk)>Completion>file completion (backward):Shift+Ctrl+Alt+Space::: {\n\
+		#f: Complète le mot courrant en utilisant les noms des fichiers du répertoire courrant\n\
+		#e: Completion with file names.\n\
+		mk_completion("file name","backward")\n\
+	}\n\
+	Buffer (Mk)>Find interesting line:F1::: {\n\
+		#f: Cherche une ligne contenant un nom de fichier et éventuellement un numéro de ligne.\n\
+		#f: Les lignes reconnus doivent être déclarées sous la forme d'une expression régulière dans le\n\
+		#f: fichier <B>macro_parameters.nm</B>.\n\
+		#f: Pour rajouter votre propre reconnaissance de ligne, modifiez le tableau\n\
+		#f: $goto_lines dans le fichier <B>macro_parameters.nm</B>. \n\
+		#f: Cette macros sert principalement dans le <B>fichier temporaire</B> de NEdit, aprés avoir utilisé\n\
+		#f: make ou grep (resp F6 et F9 par défaut) par exemple. Pour aller au fichier indiqué, utilisé \n\
+		#f: "Goto specified file" (F2 par défaut).\n\
+		#e: Find an interesting line (ie: with a file name and eventually a line number).\n\
+		#e: You can add or modify the interested lines in the <B>macro_parameters.nm</B> file.\n\
+		mk_find_error("forward")\n\
+	}\n\
+	Buffer (Mk)>Find interesting line (backward):Shift+F1::: {\n\
+		#f: idem précedent, mais la recherche s'effectue en arrière.\n\
+		#e: idem, backward.\n\
+		mk_find_error("backward")\n\
+	}\n\
+	Buffer (Mk)>Find interesting line priority:Shift+Alt+F1::: {\n\
+		#f: change la valeur de priorité pour la recherche de lignes intéressantes\n\
+		#e: set new find-interesting-line priority.\n\
+		mk_new_priority()\n\
+	}\n\
+	Buffer (Mk)>Highlight interesting:Alt+F1::: {\n\
+		#f: Met en évidence les lignes intéressantes.\n\
+		#e: hightlight interesting lines.\n\
+		mk_highlight_lines(0)\n\
+	}\n\
+	Buffer (Mk)>Process interesting line:F2::: {\n\
+		#f: Cherche une ligne intéressante et applique l'action adéquat.\n\
+		#e: Look for an interesting line and apply the corresponding action\n\
+		mk_goto_error("any_dialog")\n\
+	}\n\
+	Buffer (Mk)>Process interesting line (auto):Shift+F2::: {\n\
+		#f: Cherche une ligne intéressante et applique l'action spécial adéquat.\n\
+		#e: Look for an interesting line and apply the corresponding special action\n\
+		mk_goto_error("auto_select")\n\
+	}\n\
+	Buffer (Mk)>Goto buffer:F3::: {\n\
+		#f: Ouvre le <B>fichier temporaire</B> de NEdit\n\
+		#f: C'est dans ce fichier que s'affiche le résultat des commandes\n\
+		#f: tel que grep ou make (resp F6 et F9 par défaut).\n\
+		#e: Open the <B>NEdit temporary file</B>.\n\
+		mk_goto_buffer()\n\
+	}\n\
+	Buffer (Mk)>Goto last file:Alt+F3::: {\n\
+		#f: change l'apparence d<B>fichier temporaire</B>\n\
+		#e: Set <B>NEdit temporary file</B> parameters.\n\
+		mk_goto_flag()\n\
+	}\n\
+	Buffer (Mk)>New buffer:Shift+F3::: {\n\
+		#f: Nouveau buffer.\n\
+		#e: New buffer.\n\
+		mk_open_buffer(mk_newBuffer())\n\
+	}\n\
+	Buffer (Mk)>Goto Makefile:Alt+F4::: {\n\
+		#f: Ouvre le Makefile (ou makefile) s'il existe.\n\
+		#e: Open Makefile.\n\
+		mk_goto_makefile()\n\
+	}\n\
+	Buffer (Mk)>Next interesting line:Alt+F2::: {\n\
+		#f: Cherche et va à la ligne intéressant suivante.\n\
+		#e: find the next intersting line and jump goto it.\n\
+		mk_goto_next_interesting_line()\n\
+	}\n\
+	Buffer (Mk)>shortcut>show unix command:Alt+U::: {\n\
+		#f: Affiche les commandes unix assignéws aux touches [ALT]F9-F12.\n\
+		#f: Ces commandes sont modifiables dans <B>macro_parameters.nm</B>.\n\
+		#e: Show the unix commands bind to the (ALT+)F9-F12.\n\
+		#e: You can permantly change those command in the <B>macro_parameters.nm</B>.\n\
+		mk_show_command()\n\
+	}\n\
+	Buffer (Mk)>shortcut>kill current buffer:Ctrl+Alt+K::: {\n\
+		#f: Arrete l'execution courrante\n\
+		#e: kill current execution\n\
+		mk_kill_engine()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute command dialog:Alt+F8::: {\n\
+		#f: Ouvre une fenêtre de dialogue pour exécuter une commande unix.\n\
+		#e: Enter a unix command to execute in the <B>NEdit temporary file</B>.\n\
+		mk_execute_in_buffer_dialog()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute command list:Shift+Alt+F8::: {\n\
+		#f: Ouvre une list de commande unix (definie dans macro_parameters.nm).\n\
+		#e: open a list dialog box with unix command (define in macro_parameters.nm) .\n\
+		mk_execute_in_buffer_list()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute last command:F8::: {\n\
+		#f: Exécute la dernière commande unix si elle existe.\n\
+		#f: Sinon, ouvre une fenêtre de dialogue.\n\
+		#e: Execute last command.\n\
+		mk_execute_in_buffer_last()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute unix file:Alt+F7::: {\n\
+		#f: Ouvre une fenêtre de dialogue pour exécuter un fichier exécutable.\n\
+		#e: Execute one of the executable files present in the local directory.\n\
+		mk_execute_in_buffer_bin_dialog()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute last unix file:F7::: {\n\
+		#f: Exécute le dernier exécutable s'il existe\n\
+		#f: Sinon, ouvre une fenêtre de dialogue.\n\
+		#e: Execute last executable files.\n\
+		mk_execute_in_buffer_bin_last()\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute F9:F9::: {\n\
+		#f: Exécute la commande attachée à F9.\n\
+		#e: Execute the unix command bind to F9.\n\
+		mk_execute_predefined_unix_command(1)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute F10:F10::: {\n\
+		#f: Exécute la commande attachée à F10.\n\
+		#e: Execute the unix command bind to F10.\n\
+		mk_execute_predefined_unix_command(2)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute F11:F11::: {\n\
+		#f: Exécute la commande attachée à F11.\n\
+		#e: Execute the unix command bind to F11.\n\
+		mk_execute_predefined_unix_command(3)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute F12:F12::: {\n\
+		#f: Exécute la commande attachée à F12.\n\
+		#e: Execute the unix command bind to F12.\n\
+		mk_execute_predefined_unix_command(4)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute ALT F9:Alt+F9::: {\n\
+		#f: Exécute la commande attachée à ALT+F9.\n\
+		#e: Execute the unix command bind to ALT+F9.\n\
+		mk_execute_predefined_unix_command(5)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute ALT F10:Alt+F10::: {\n\
+		#f: Exécute la commande attachée à ALT+F10.\n\
+		#e: Execute the unix command bind to ALT+F10.\n\
+		mk_execute_predefined_unix_command(6)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute ALT F11:Alt+F11::: {\n\
+		#f: Exécute la commande attachée à ALT+F11.\n\
+		#e: Execute the unix command bind to ALT+F11.\n\
+		mk_execute_predefined_unix_command(7)\n\
+	}\n\
+	Buffer (Mk)>shortcut>execute ALT F12:Alt+F12::: {\n\
+		#f: Exécute la commande attachée à ALT+F12.\n\
+		#e: Execute the unix command bind to ALT+F12.\n\
+		mk_execute_predefined_unix_command(8)\n\
+	}\n\
+	c++ (Mk)>add #ifndef@C@C++:::: {\n\
+		#f: Ajoute:<BR>\n\
+		#f: #ifndef _toto_<BR>\n\
+		#f: #define _toto_    ... au debut du fichier<BR>\n\
+		#f: #endif            ... à la fin du fichier\n\
+		#f: Add:<BR>\n\
+		#f: #ifndef _foo_<BR>\n\
+		#f: #define _foo_     ... at the beginning of the file<BR>\n\
+		#f: #endif            ... at the end of the file\n\
+		mk_add_ifndef()\n\
+	}\n\
+	c++ (Mk)>create constructor@C++:Shift+Alt+C::R: {\n\
+		#f: Créer le constructor des attributs sélectionnées (pour le langage C++).\n\
+		#e: Create a constructor with the selected parameters.\n\
+		mk_create_constructor()\n\
+	}\n\
+	c++ (Mk)>Add stderr@C++:Shift+Ctrl+Alt+C::R: {\n\
+		#f: Créer le constructor des attributs sélectionnées (pour le langage C++).\n\
+		#e: Create a constructor with the selected parameters.\n\
+		mk_add_cerr_num()\n\
+	}\n\
+	Work settings (Mk)>choose host:Shift+Alt+H::: {\n\
+		#f: Dialogue permettant de choisir la nouvelle machine de travail parmis une liste.\n\
+		#f: La liste des machines disponible est dans <B>macro_parameters.nm</B>.\n\
+		#e: Choose a new host (among those listed in the <B>macro_parameters.nm</B> file).\n\
+		mk_set_host_list()\n\
+	}\n\
+	Work settings (Mk)>new path:Ctrl+Alt+P::: {\n\
+		#f: Change le <B>dossier de travail</B> (uniquement en mode "global working directory").\n\
+		#e: Set a new <B>Working directory</B>.\n\
+		mk_set_path_dialog()\n\
+	}\n\
+	Work settings (Mk)>new host:Ctrl+Alt+H::: {\n\
+		#f: Dialogue permettant d'entrer la nouvelle machine de travail.\n\
+		#e: Enter a new host.\n\
+		mk_set_host_dialog()\n\
+	}\n\
+	Work settings (Mk)>local path:Shift+Ctrl+Alt+P::: {\n\
+		#f: Le <B>dossier de travail</B> devient le dossier du répertoire courrant\n\
+		#e: Set the <B>Working directory</B> to the local path.\n\
+		mk_set_local_path()\n\
+	}\n\
+	Work settings (Mk)>local host:Shift+Ctrl+Alt+H::: {\n\
+		#f: La machine de travail devient la machine locale.\n\
+		#e: Set the host to the local host.\n\
+		mk_set_local_host()\n\
+	}\n\
+	Work settings (Mk)>Change macros parameters:Ctrl+Alt+M::: {\n\
+		#f: Ouvre le fichier de paramètre des macros (appelé <B>macro_parameters.nm</B>).\n\
+		#e: Open the <B>macro_parameters.nm</B> file.\n\
+		mk_open_macros_parameters_file()\n\
+	}\n\
+	Work settings (Mk)>reload macros parameters:Shift+Ctrl+Alt+M::: {\n\
+		#f: Recharge tous les paramêtres du fichier de paramètre des macros (appellé <B>macro_parameters.nm</B>).\n\
+		#e: Reload the <B>macro_parameters.nm</B> file.\n\
+		mk_reload_macros_parameters_file()\n\
+	}\n\
+	Work settings (Mk)>switch global/local working directory:Ctrl+Alt+S::: {\n\
+		#f: Certaines macro-fonctions ont besoin de se situer dans l'arborescence des dossiers.\n\
+		#f: Deux modes sont possibles:<BR>\n\
+		#f: - mode local : soit le <B>dossier de travail</B> est toujours celui du fichier de la fenêtre actuelle,<BR>\n\
+		#f: - mode global : soit le <B>dossier de travail</B> est fixé et ne dépend pas de la fenêtre actuelle.<BR>\n\
+		#f: Pour changer de mode, utiliser cette macros.\n\
+		#f: Dans le cas d'un <B>dossier de travail</B> "fixé", il est possible de changer sa valeur gràce à\n\
+		#f: Work settings>new path.\n\
+		#e: Some macros have to know the directory into which they must be executed (for compilation by example).\n\
+		#e: These <B>working directory</B> can be handle in two different ways:<BR>\n\
+		#e: - local mode : the <B>working directory</B> is always the directory of the current file,<BR>\n\
+		#e: - global mode : the <B>working directory</B> does not depend on the current file.<BR>\n\
+		#e: To change mode, use this macro.\n\
+		mk_action_path_mode()\n\
+	}\n\
+	Misc (Mk)>Reload actual macro file@NEdit Macro:Ctrl+Alt+R::: {\n\
+		#f: Recharge le fichiers macro en cours d'edition.\n\
+		#e: Reload actual nedit macro file.\n\
+		load_macro_file($file_path $file_name)\n\
+	}\n\
+	Misc (Mk)>Show shell command:::: {\n\
+		#f: Affiche (et éventuellement vérifie) si les commandes unix definit dans macro_parameters.nm sont valides.\n\
+		#e: Show (and eventually check) if the shell commands defined in macro_parameters.nm are valid.\n\
+		mk_check_uc()\n\
+	}\n\
+	Misc (Mk)>Show environement variable:::: {\n\
+		#f: Affiche les variables d'environement de macro-kit\n\
+		#E: show envorianment dialog of the macro-kit\n\
+		mk_show_env_var()\n\
+	}\n\
+	Misc (Mk)>Save all:Shift+Ctrl+S::: {\n\
+		#f: Sauvegarde tous les fichiers ouverts.\n\
+		#e: Save all open files.\n\
+		mk_save_all()\n\
+	}\n\
+	Misc (Mk)>Clean rangeset:Shift+Ctrl+Alt+R::: {\n\
+		#f: Détruit tous les range-set\n\
+		#e:destroy all rangesets\n\
+		mk_clean_all_rangeset()\n\
+	}\n\
+	Misc (Mk)>Help:::: {\n\
+		#f: Au sujet de ces macros...\n\
+		#e: About this macros...\n\
+		mk_macro_kit_help()\n\
+	}\n\
+	divers>create list pro files@Makefile:::: {\n\
+		create_pro_list()\n\
+	}\n\
+	divers>load these tag:::: {\n\
+		load_these_tags()\n\
+	}\n\
+	divers>load cgtools tag:::: {\n\
+		load_cgtools_tags()\n\
+	}\n\
+	divers>load dg tag:::: {\n\
+		load_dg_tags()\n\
+	}\n\
+	divers>load usr tag:::: {\n\
+		load_usr_tags()\n\
+	}\n\
+	divers>multi copy:Shift+Ctrl+Alt+C::: {\n\
+		multi_copy()\n\
+	}\n\
+	divers>hpinfo:Shift+Ctrl+Alt+Backslash::: {\n\
+		hpinfo()\n\
+	}\n\
+	divers>uncut latex line:::: {\n\
+		uncut_latex_line()\n\
+	}\n
+nedit.bgMenuCommands: \
+	ctags local (Mk):::: {\n\
+		#f: Ouvre une fenêtre qui liste toutes les fonctions d'un fichier (avec ctags).\n\
+		#f: Les paramêtres utilisés sont dans le fichier <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#f: Pour plus de précision, consultez l'aide de la commande unix ctags.\n\
+		#f: PS: utilisez Exuberant Ctags.\n\
+		#e: Open a windows which list all the functions declared in a file (using ctags).\n\
+		#e: You can change the parameters in <B>macro_parameters.nm</B> ($ctags_parameters)\n\
+		#e: PS: use Exuberant Ctags.\n\
+		mk_local_tags()\n\
+	}\n\
+	new template file (Mk):::: {\n\
+		#f: Créer un fichier template.\n\
+		#f: Vous pouvez fabriquer d'autres fichiers templates (dans ~/.neditutil/customize/templates/)\n\
+		#e: create a new template file.\n\
+		mk_template_file()\n\
+	}\n\
+	save all (Mk):::: {\n\
+		#f: Sauvegarde tous les fichiers ouverts.\n\
+		#e: Save all open files.\n\
+		mk_save_all()\n\
+	}\n\
+	Comment (Mk)>comment //:::R: {\n\
+		#f: Ajoute des commentaires: //.\n\
+		#e: add comments: //.\n\
+		mk_comment("//")\n\
+	}\n\
+	Comment (Mk)>uncomment //:::R: {\n\
+		#f: Enlève les commentaires: //.\n\
+		#e: remove comments: //.\n\
+		mk_uncomment("//")\n\
+	}\n\
+	Comment (Mk)>comment /*...*/:::R: {\n\
+		#f: Ajoute des commentaires: /*...*/.\n\
+		#e: add comments: /*...*/.\n\
+		mk_comment("/*...*/")\n\
+	}\n\
+	Comment (Mk)>uncomment /*...*/:::R: {\n\
+		#f: Enlève les commentaires: /*...*/.\n\
+		#e: remove comments: //.\n\
+		mk_uncomment("/*...*/")\n\
+	}\n\
+	Comment (Mk)>comment #:::R: {\n\
+		#f: Ajoute des commentaires: #.\n\
+		#e: add comments: #.\n\
+		mk_comment("#")\n\
+	}\n\
+	Comment (Mk)>uncomment #:::R: {\n\
+		#f: Enlève les commentaires: #.\n\
+		#e: remove comments: #.\n\
+		mk_uncomment("#")\n\
+	}\n\
+	Comment (Mk)>comment mail:::R: {\n\
+		#f: Ajoute des commentaires: >.\n\
+		#e: add comments: >.\n\
+		mk_comment("> ")\n\
+	}\n\
+	Comment (Mk)>uncomment mail:::R: {\n\
+		#f: Enlève les commentaires: >.\n\
+		#e: remove comments: >.\n\
+		mk_uncomment("> ")\n\
+	}\n\
+	Comment (Mk)>comment %:::R: {\n\
+		#f: Ajoute des commentaires: %.\n\
+		#e: add comments: &.\n\
+		mk_comment("%")\n\
+	}\n\
+	Comment (Mk)>uncomment %:::R: {\n\
+		#f: Enlève les commentaires: %.\n\
+		#e: remove comments: %.\n\
+		mk_uncomment("%")\n\
+	}\n\
+	Completion dialog (Mk)>window completion:::: {\n\
+		#f: Ouvre une fenêtre qui liste les complétions possibles avec les mots présents dans la fenêtre.\n\
+		#e: Open a dialog box with all completion matches in the windows.\n\
+		mk_completion("local","dialog")\n\
+	}\n\
+	Completion dialog (Mk)>dico completion:::: {\n\
+		#f: Ouvre une fenêtre qui liste les complétions possibles avec les mots présents dans le dictionnaire.\n\
+		#e: Open a dialog box with all completion matches in the dictionaries.\n\
+		mk_completion("dico","dialog")\n\
+	}\n\
+	Completion dialog (Mk)>global ctags completion:::: {\n\
+		#f: Ouvre une fenêtre qui liste les complétions possibles avec les mots\n\
+		#f: présents dans le fichier tags (s'il existe).\n\
+		#e: Open a dialog box with all completion matches in the tags file.\n\
+		mk_completion("global ctags","dialog")\n\
+	}\n\
+	Completion dialog (Mk)>local ctags completion:::: {\n\
+		#f: Ouvre une fenêtre qui liste les complétions possibles avec les mots\n\
+		#f: présents dans le fichier tags (s'il existe).\n\
+		#e: Open a dialog box with all completion matches in the tags file.\n\
+		mk_completion("local ctags","dialog")\n\
+	}\n\
+	Completion dialog (Mk)>file name completion:::: {\n\
+		#f: Ouvre une fenêtre qui liste les complétions possibles avec les noms de fichiers présents dans le.\n\
+		#f: <B>dossier de travail</B> courrant.\n\
+		#e: Open a dialog box with all completion matches in file names of the current directory.\n\
+		mk_completion("file name","dialog")\n\
+	}\n\
+	Customize (Mk)>open expander.data:::: {\n\
+		#f: Ouvre le fichier de configuration de l'expander.\n\
+		#e: Open the expander.data file.\n\
+		mk_open_expander_file()\n\
+	}\n\
+	Customize (Mk)>open language-specific dicos:::: {\n\
+		#f: liste les dictionnaires dédiés au langage courrant.\n\
+		#e: open one of the dictionaries bind to the current langages.\n\
+		mk_open_specific_dico()\n\
+	}\n\
+	Customize (Mk)>open dicos:::: {\n\
+		#f: liste tous les dictionnaires.\n\
+		#e: open a dictionary.\n\
+		mk_open_dico()\n\
+	}\n\
+	Work settings (Mk)>choose host:::: {\n\
+		#f: Dialogue permettant de choisir la nouvelle machine de travail parmis une liste.\n\
+		#f: La liste des machines disponible est dans <B>macro_parameters.nm</B>.\n\
+		#e: Choose a new host (among those listed in the <B>macro_parameters.nm</B> file).\n\
+		mk_set_host_list()\n\
+	}\n\
+	Work settings (Mk)>new path:::: {\n\
+		#f: Change le <B>dossier de travail</B> (uniquement en mode "global working directory").\n\
+		#e: Set a new <B>Working directory</B>.\n\
+		mk_set_path_dialog()\n\
+	}\n\
+	Work settings (Mk)>new host:::: {\n\
+		#f: Dialogue permettant d'entrer la nouvelle machine de travail.\n\
+		#e: Enter a new host.\n\
+		mk_set_host_dialog()\n\
+	}\n\
+	Work settings (Mk)>local path:::: {\n\
+		#f: Le <B>dossier de travail</B> devient le dossier du répertoire courrant\n\
+		#e: Set the <B>Working directory</B> to the local path.\n\
+		mk_set_local_path()\n\
+	}\n\
+	Work settings (Mk)>local host:::: {\n\
+		#f: La machine de travail devient la machine locale.\n\
+		#e: Set the host to the local host.\n\
+		mk_set_local_host()\n\
+	}\n\
+	Work settings (Mk)>Change macros parameters:::: {\n\
+		#f: Ouvre le fichier de paramètre des macros (appelé <B>macro_parameters.nm</B>).\n\
+		#e: Open the <B>macro_parameters.nm</B> file.\n\
+		mk_open_macros_parameters_file()\n\
+	}\n\
+	Work settings (Mk)>reload macros parameters:::: {\n\
+		#f: Recharge tous les paramêtres du fichier de paramètre des macros (appellé <B>macro_parameters.nm</B>).\n\
+		#e: Reload the <B>macro_parameters.nm</B> file.\n\
+		mk_reload_macros_parameters_file()\n\
+	}\n\
+	Work settings (Mk)>switch global/local working directory:::: {\n\
+		#f: Certaines macro-fonctions ont besoin de se situer dans l'arborescence des dossiers.\n\
+		#f: Deux modes sont possibles:<BR>\n\
+		#f: - mode local : soit le <B>dossier de travail</B> est toujours celui du fichier de la fenêtre actuelle,<BR>\n\
+		#f: - mode global : soit le <B>dossier de travail</B> est fixé et ne dépend pas de la fenêtre actuelle.<BR>\n\
+		#f: Pour changer de mode, utiliser cette macros.\n\
+		#f: Dans le cas d'un <B>dossier de travail</B> "fixé", il est possible de changer sa valeur gràce à\n\
+		#f: Work settings>new path.\n\
+		#e: Some macros have to know the directory into which they must be executed (for compilation by example).\n\
+		#e: These <B>working directory</B> can be handle in two different ways:<BR>\n\
+		#e: - local mode : the <B>working directory</B> is always the directory of the current file,<BR>\n\
+		#e: - global mode : the <B>working directory</B> does not depend on the current file.<BR>\n\
+		#e: To change mode, use this macro.\n\
+		mk_action_path_mode()\n\
+	}\n\
+	mp3>ALL@Mk Output:::: {\n\
+		mp3()\n\
+	}\n\
+	mp3>LOCAL@Mk Output:::: {\n\
+		mp3_list($mp3Path["root"],"all")\n\
+	}\n\
+	mp3>ALL search@Mk Output:::: {\n\
+		mp3_db_list()\n\
+	}\n\
+	mp3>LOCAL search@Mk Output:::: {\n\
+		mp3_list($mp3Path["root"],"search")\n\
+	}\n\
+	mp3>current CD@Mk Output:::: {\n\
+		mp3_list($mp3Path["cd"],"all")\n\
+	}\n\
+	mp3>CDs@Mk Output:::: {\n\
+		mp3_cd()\n\
+	}\n\
+	mp3>LOCAL tmp@Mk Output:::: {\n\
+		mp3_list($mp3Path["tmp"],"all")\n\
+	}\n\
+	mp3>copy@Mk Output:::R: {\n\
+		mp3_copy()\n\
+	}\n\
+	mp3>play@Mk Output:::R: {\n\
+		mp3_copy("play")\n\
+	}\n
+nedit.highlightPatterns: Ada:Default\n\
+	Awk:Default\n\
+	C++:1:0{\n\
+		dox comment:"/\\*(?:!|\\*)":"\\*/"::Comment::\n\
+		dox cplus comment:"//(/|!)":"$"::Comment::\n\
+		dox keyword:"\\\\(?:weakgroup|warning|version|verbinclude|verbatim|var|until|union|typedef|todo|throw|test|subsection|struct|skipline|skip|since|showinitializer|section|sa|retval|return|remarks|relates|ref|pre|post|param|par|page|package|p|overload|note|nosubgrouping|namespace|name|mainpage|link|line|li|latexonly|invariant|internal|interface|ingroup|include|image|ifnot|if|htmlonly|htmlinclude|hideinitializer|fn|file|f\\$|f\\]|f\\[|exception|example|enum|endverbatim|endlink|endlatexonly|endif|endhtmlonly|endcode|em|elseif|else|e|dotfile|dontinclude|deprecated|defgroup|def|date|copydoc|code|class|c|bug|brief|b|author|attention|arg|anchor|addtogroup|addindex|a|#|\\&|\\\\|\\$|@|\\>|\\<|~|\\{|\\})":::Comment2:dox comment:\n\
+		dox keyword2:"\\\\(?:weakgroup|warning|version|verbinclude|verbatim|var|until|union|typedef|todo|throw|test|subsection|struct|skipline|skip|since|showinitializer|section|sa|retval|return|remarks|relates|ref|pre|post|param|par|page|package|p|overload|note|nosubgrouping|namespace|name|mainpage|link|line|li|latexonly|invariant|internal|interface|ingroup|include|image|ifnot|if|htmlonly|htmlinclude|hideinitializer|fn|file|f\\$|f\\]|f\\[|exception|example|enum|endverbatim|endlink|endlatexonly|endif|endhtmlonly|endcode|em|elseif|else|e|dotfile|dontinclude|deprecated|defgroup|def|date|copydoc|code|class|c|bug|brief|b|author|attention|arg|anchor|addtogroup|addindex|a|#|\\&|\\\\|\\$|@|\\>|\\<|~|\\{|\\})":::Comment2:dox cplus comment:\n\
+		comment:"/\\*":"\\*/"::Comment::\n\
+		cplus comment:"//":"$"::Comment::\n\
+		string:"L?""":"""":"\\n":String::\n\
+		preprocessor line:"^\\s*#\\s*(include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma|warning)>":"$"::Preprocessor::\n\
+		string escape chars:"\\\\(.|\\n)":::String1:string:\n\
+		preprocessor esc chars:"\\\\(.|\\n)":::Preprocessor1:preprocessor line:\n\
+		preprocessor comment:"/\\*":"\\*/"::Comment:preprocessor line:\n\
+		preproc cplus comment:"//":"$"::Comment:preprocessor line:\n\
+		preprocessor keywords:"<__(LINE|FILE|DATE|TIME|STDC)__>":::Preprocessor::\n\
+		character constant:"L?'":"'":"[^\\\\][^']":Character Const::\n\
+		float constant:"<((0(x|X)[0-9a-fA-F]*)|(([0-9]+\\.[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?>":::Numeric Const2::D\n\
+		integer constant:"<((0(x|X)[0-9a-fA-F]*)|([0-9]+)((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?>":::Numeric Const::D\n\
+		storage keyword:"<(class|typename|typeid|template|friend|virtual|inline|INLINE|explicit|operator|public|private|protected|const|extern|auto|register|static|mutable|unsigned|signed|volatile|char|double|float|int|long|short|bool|wchar_t|void|typedef|struct|union|enum|asm|export)>":::Storage Type::D\n\
+		storage keyword perso:"<(ty_\\w+|te_\\w+|quat|vec[0-9]+|color[0-9]+|pixel|signals|slots|Q\\w+|DG_NAMESPACE|uniform|(?:float[1-4](?:x[1-4])?))>":::Storage Type::D\n\
+		cg semantic:"<(POSITION|NORMAL|BINORMAL|BLENDINDICES|BLENDWEIGHT|PSIZE|TEXCOORD[0-7]|FOG|COLOR[0-1])>":::LaTeX Math::D\n\
+		keyword:"<(new|delete|this|return|goto|if|else|case|default|switch|break|continue|while|do|for|try|catch|throw|sizeof|true|false|namespace|using|dynamic_cast|static_cast|reinterpret_cast|const_cast)>":::Keyword::D\n\
+		braces:"[{}]":::Keyword::D\n\
+	}\n\
+	CSS:Default\n\
+	Csh:Default\n\
+	Fortran:Default\n\
+	Java:Default\n\
+	JavaScript:Default\n\
+	LaTeX:1:0{\n\
+		Comment:"%":"$"::Text Comment::\n\
+		Comment macro:"\\\\comment\\{":"\\}"::Character Const::\n\
+		Parameter:"#[0-9]*":::Text Arg::\n\
+		Special Chars:"[{}&]":::Keyword::\n\
+		Escape Chars:"\\\\[$&%#_{}]":::Text Escape::\n\
+		Super Sub 1 Char:"(\\^|_)[^{]":::Text Arg2::\n\
+		Verbatim Begin End:"\\\\begin\\{verbatim\\*?}":"\\\\end\\{verbatim\\*?}"::Plain::\n\
+		Verbatim BG Color:"&":"&"::Keyword:Verbatim Begin End:C\n\
+		Verbatim:"(\\\\verb\\*?)([^\\l\\s\\*]).*?(\\2)":::Plain::\n\
+		Verbatim Color:"\\1\\2\\3":""::Keyword:Verbatim:C\n\
+		Inline Math:"\\$|\\\\\\(":"\\$|\\\\\\)":"\\\\\\(":LaTeX Math::\n\
+		Inline Math Comment:"[^\\\\](?:\\\\\\\\)*%":"$"::Text Comment:Inline Math:\n\
+		Math Color:"&":"&"::Keyword:Inline Math:C\n\
+		Math Escape Chars:"\\\\\\$":::Text Escape:Inline Math:\n\
+		No Arg Command:"\\\\(left|right)[\\[\\]{}()]":::Text Key::\n\
+		Command:"[_^]|[\\\\@](a'|a`|a=|[A-Za-z]+\\*?|\\\\\\*|[-@_='`^""|\\[\\]*:!+<>/~.,\\\\ ])":"nevermatch":"[^{[(]":Text Key::\n\
+		Cmd Brace Args:"\\{":"}"::Text Arg2:Command:\n\
+		Brace Color:"&":"&"::Text Arg:Cmd Brace Args:C\n\
+		Cmd Paren Args:"\\(":"\\)":"$":Text Arg2:Command:\n\
+		Paren Color:"&":"&"::Text Arg:Cmd Paren Args:C\n\
+		Cmd Bracket Args:"\\[":"\\]":"$":Text Arg2:Command:\n\
+		Bracket Color:"&":"&"::Text Arg:Cmd Bracket Args:C\n\
+		Sub Command:"([_^]|([\\\\@]([A-Za-z]+\\*?|[^A-Za-z$&%#{}~\\\\ \\t])))":::Text Key1:Cmd Brace Args:\n\
+		Sub Brace:"\\{":"}"::Text Arg2:Cmd Brace Args:\n\
+		Sub Sub Brace:"\\{":"}"::Text Arg2:Sub Brace:\n\
+		Sub Sub Sub Brace:"\\{":"}"::Text Arg2:Sub Sub Brace:\n\
+		Sub Sub Sub Sub Brace:"\\{":"}"::Text Arg2:Sub Sub Sub Brace:\n\
+		Sub Paren:"\\(":"\\)":"$":Text Arg2:Cmd Paren Args:\n\
+		Sub Sub Paren:"\\(":"\\)":"$":Text Arg2:Sub Paren:\n\
+		Sub Sub Sub Paren:"\\(":"\\)":"$":Text Arg2:Sub Sub Paren:\n\
+		Sub Parameter:"#[0-9]*":::Text Arg:Cmd Brace Args:\n\
+		Sub Spec Chars:"[{}$&]":::Text Arg:Cmd Brace Args:\n\
+		Sub Esc Chars:"\\\\[$&%#_{}~^\\\\]":::Text Arg1:Cmd Brace Args:\n\
+	}\n\
+	Lex:Default\n\
+	Makefile:8:0{\n\
+		Comment:"#":"$"::Comment::\n\
+		Comment Continuation:"\\\\\\n":::Keyword:Comment:\n\
+		Assignment:"^(( *| [ \\t]*)[A-Za-z0-9_+][^ \\t]*[ \\t]*(\\-|\\*|\\+|:)?)=":"$"::Preprocessor::\n\
+		Assignment left:"\\1":""::Preprocessor1:Assignment:C\n\
+		Assignment Continuation:"\\\\\\n":::Keyword:Assignment:\n\
+		Assignment Comment:"#":"$"::Comment:Assignment:\n\
+		Dependency Line:"^( *| [ \\t]*)(.DEFAULT|.DELETE_ON_ERROR|.EXPORT_ALL_VARIABLES.IGNORE|.INTERMEDIATE|.PHONY|.POSIX|.PRECIOUS|.SECONDARY|.SILENT|.SUFFIXES)*(([A-Za-z0-9./$(){} _@^<*?%+-]*(\\\\\\n)){,8}[A-Za-z0-9./$(){} _@^<*?%+-]*)::?":"$|;"::Text Key1::\n\
+		Dep Target Special:"\\2":""::Text Key1:Dependency Line:C\n\
+		Dep Target:"\\3":""::Text Key:Dependency Line:C\n\
+		Dep Continuation:"\\\\\\n":::Keyword:Dependency Line:\n\
+		Dep Comment:"#":"$"::Comment:Dependency Line:\n\
+		Dep Internal Macro:"\\$([<@*?%]|\\$@)":::Preprocessor1:Dependency Line:\n\
+		Dep Macro:"\\$([A-Za-z0-9_]|\\([^)]*\\)|\\{[^}]*})":::Preprocessor:Dependency Line:\n\
+		Continuation:"\\\\$":::Keyword::\n\
+		Macro:"\\$([A-Za-z0-9_]|\\([^)]*\\)|\\{[^}]*})":::Preprocessor::\n\
+		Internal Macro:"\\$([<@*?%]|\\$@)":::Preprocessor1::\n\
+		Escaped Dollar:"\\$\\$":::Comment::\n\
+		Include:"^( *| [ \\t]*)include[ \\t]":::Keyword::\n\
+		Exports:"^( *| [ \\t]*)<export|unexport>[ \\t]":"$"::Keyword::\n\
+		Exports var:".[A-Za-z0-9_+]*":"$"::Keyword:Exports:\n\
+		Conditionals:"^( *| [ \\t]*)<ifeq|ifneq>[ \\t]":::Keyword::D\n\
+		Conditionals ifdefs:"^( *| [ \\t]*)<ifdef|ifndef>[ \\t]":"$"::Keyword::D\n\
+		Conditionals ifdefs var:".[A-Za-z0-9_+]*":"$"::Preprocessor:Conditionals ifdefs:D\n\
+		Conditional Ends:"^( *| [ \\t]*)<else|endif>":::Keyword::D\n\
+		vpath:"^( *| [ \\t]*)<vpath>[ \\t]":::Keyword::D\n\
+		define:"^( *| [ \\t]*)<define>[ \\t]":"$"::Keyword::D\n\
+		define var:".[A-Za-z0-9_+]*":"$"::Preprocessor:define:D\n\
+		define Ends:"^( *| [ \\t]*)<endef>":::Keyword::D\n\
+	}\n\
+	Matlab:Default\n\
+	NEdit Macro:1:0{\n\
+		Comment:"#":"$"::Comment::\n\
+		Built-in Vars:"<\\$([1-9]|column|cursor|em_tab_dist|file_name|file_path|language_mode|line|n_args|read_status|search_end|selection_end|selection_left|selection_right|selection_start|server_name|shell_cmd_status|string_dialog_button|tab_dist|text_length|use_tabs|wrap_margin)>":::Identifier::\n\
+		Built-in Subrs:"<(focus_window|shell_command|length|get_range|t_print|dialog|string_dialog|replace_range|replace_selection|set_cursor_pos|get_character|min|max|search|search_string|substring|replace_substring|read_file|write_file|append_file|beep|get_selection|replace_in_string|select|select_rectangle|toupper|tolower|string_to_clipboard|clipboard_to_string)>":::Subroutine::\n\
+		Menu Actions:"<(new|open|open-dialog|open_dialog|open-selected|open_selected|close|save|save-as|save_as|save-as-dialog|save_as_dialog|revert-to-saved|revert_to_saved|revert_to_saved_dialog|include-file|include_file|include-file-dialog|include_file_dialog|load-macro-file|load_macro_file|load-macro-file-dialog|load_macro_file_dialog|load-tags-file|load_tags_file|load-tags-file-dialog|load_tags_file_dialog|print|print-selection|print_selection|exit|undo|redo|delete|select-all|select_all|shift-left|shift_left|shift-left-by-tab|shift_left_by_tab|shift-right|shift_right|shift-right-by-tab|shift_right_by_tab|find|find-dialog|find_dialog|find-again|find_again|find-selection|find_selection|replace|replace-dialog|replace_dialog|replace-all|replace_all|replace-in-selection|replace_in_selection|replace-again|replace_again|goto-line-number|goto_line_number|goto-line-number-dialog|goto_line_number_dialog|goto-selected|goto_selected|mark|mark-dialog|mark_dialog|goto-mark|goto_mark|goto-mark-dialog|goto_mark_dialog|match|find-definition|find_definition|split-window|split_window|close-pane|close_pane|uppercase|lowercase|fill-paragraph|fill_paragraph|control-code-dialog|control_code_dialog|filter-selection-dialog|filter_selection_dialog|filter-selection|filter_selection|execute-command|execute_command|execute-command-dialog|execute_command_dialog|execute-command-line|execute_command_line|shell-menu-command|shell_menu_command|macro-menu-command|macro_menu_command|bg_menu_command|post_window_bg_menu|beginning-of-selection|beginning_of_selection|end-of-selection|end_of_selection|repeat_macro|repeat_dialog)>":::Subroutine::\n\
+		Text Actions:"<(self-insert|self_insert|grab-focus|grab_focus|extend-adjust|extend_adjust|extend-start|extend_start|extend-end|extend_end|secondary-adjust|secondary_adjust|secondary-or-drag-adjust|secondary_or_drag_adjust|secondary-start|secondary_start|secondary-or-drag-start|secondary_or_drag_start|process-bdrag|process_bdrag|move-destination|move_destination|move-to|move_to|move-to-or-end-drag|move_to_or_end_drag|end_drag|copy-to|copy_to|copy-to-or-end-drag|copy_to_or_end_drag|exchange|process-cancel|process_cancel|paste-clipboard|paste_clipboard|copy-clipboard|copy_clipboard|cut-clipboard|cut_clipboard|copy-primary|copy_primary|cut-primary|cut_primary|newline|newline-and-indent|newline_and_indent|newline-no-indent|newline_no_indent|delete-selection|delete_selection|delete-previous-character|delete_previous_character|delete-next-character|delete_next_character|delete-previous-word|delete_previous_word|delete-next-word|delete_next_word|delete-to-start-of-line|delete_to_start_of_line|delete-to-end-of-line|delete_to_end_of_line|forward-character|forward_character|backward-character|backward_character|key-select|key_select|process-up|process_up|process-down|process_down|process-shift-up|process_shift_up|process-shift-down|process_shift_down|process-home|process_home|forward-word|forward_word|backward-word|backward_word|forward-paragraph|forward_paragraph|backward-paragraph|backward_paragraph|beginning-of-line|beginning_of_line|end-of-line|end_of_line|beginning-of-file|beginning_of_file|end-of-file|end_of_file|next-page|next_page|previous-page|previous_page|page-left|page_left|page-right|page_right|toggle-overstrike|toggle_overstrike|scroll-up|scroll_up|scroll-down|scroll_down|scroll-to-line|scroll_to_line|select-all|select_all|deselect-all|deselect_all|focusIn|focusOut|process-return|process_return|process-tab|process_tab|insert-string|insert_string|mouse_pan)>":::Subroutine::\n\
+		Keyword:"<(while|if|else|for|break|continue|return|define|in)>":::Keyword::\n\
+		Braces:"[{}]":::Keyword::\n\
+		Global Variable:"\\$[A-Za-z0-9_]*":::Identifier1::\n\
+		String:"""":"""":"\\n":String::\n\
+		String Escape Char:"\\\\(.|\\n)":::Text Escape:String:\n\
+		Numeric Const:"<-?[0-9]+>":::Numeric Const::\n\
+		Custom macro:"\\w+(?=\\s*[\\({])":::Subroutine1::\n\
+		Variables:"\\w+":::Identifier1::D\n\
+	}\n\
+	Pascal:Default\n\
+	Perl:Default\n\
+	PostScript:Default\n\
+	Python:Default\n\
+	Regex:Default\n\
+	SGML HTML:Default\n\
+	SQL:Default\n\
+	Sh Ksh Bash:Default\n\
+	Tcl:Default\n\
+	VHDL:Default\n\
+	Verilog:Default\n\
+	XML:Default\n\
+	X Resources:Default\n\
+	Yacc:Default\n\
+	Mk Output:1:0{\n\
+		start - info:"^NEdit buffer: (.*)\\nlanguage: (.*)\\ncommand: (.*)\\nhost: (.*)\\npath: (.*)$":::Preprocessor::\n\
+		start - value:"\\1\\2\\3\\4\\5":""::Preprocessor1:start - info:C\n\
+		end - info:"\\.\\.\\.over$":::Preprocessor::\n\
+		kill - info:"\\.\\.\\.killed$":::Ada Attributes::\n\
+		make warning:"^(?:make(?:\\[[0-9]+\\])?: \\*\\*\\* Warning).*$":::Text Key::\n\
+		make error:"^(?:make(?:\\[[0-9]+\\])?: \\*\\*\\*).*$":::Flag::\n\
+		make info:"^(?:(?:make\\[[0-9]+\\]: )|(?:cd )).*$":::LaTeX Math::\n\
+		make depend line:"^(makedepend): (warning): .*$":::Plain::\n\
+		make depend:"\\1":""::Keyword:make depend line:C\n\
+		make depend warning:"\\2":""::Text Key:make depend line:C\n\
+		CC ligne:"^(cc-[0-9]+ (?:(?:CC)|(?:cc)):) ((ERROR)|(WARNING)|(REMARK)) (File =) (.*), (Line =) ([0-9]+)$":::String::\n\
+		CC ligne - file 1:"\\6":""::Text Arg2:CC ligne:C\n\
+		CC ligne - file 2:"\\7":""::Text Arg:CC ligne:C\n\
+		CC ligne - line 1:"\\8":""::String:CC ligne:C\n\
+		CC ligne - line 2:"\\9":""::String2:CC ligne:C\n\
+		CC ligne - ERROR:"\\3":""::Flag:CC ligne:C\n\
+		CC ligne - WARNING:"\\4":""::Text Key:CC ligne:C\n\
+		CC ligne - REMARK:"\\5":""::Text Key1:CC ligne:C\n\
+		CC ligne - pipo:"\\1":""::Comment:CC ligne:C\n\
+		--- line:"--- ((C\\+\\+ prelinker): )?.* ---":::Text Escape::\n\
+		ldline:"^(?:ld32): (?:(ERROR)|(WARNING)|(INFO))(.*)$":::Plain::\n\
+		ldline ERROR:"\\1":""::Flag:ldline:C\n\
+		ldline WARNING:"\\2":""::Text Key:ldline:C\n\
+		ldline INFO:"\\3":""::Text Key1:ldline:C\n\
+		error code:"\\*\\*\\* Error .*$":::Label::\n\
+		g++ line:"^([^""][^: ]+):([0-9]+(?::[0-9]+)?): (?:(?:(warning): .*)|(?:(error): .*))$":::Plain::\n\
+		g++ file:"\\1":""::Text Arg:g++ line:C\n\
+		g++ nline:"\\2":""::String2:g++ line:C\n\
+		g++ warning:"\\3":""::Text Key:g++ line:C\n\
+		g++ error:"\\4":""::Label:g++ line:C\n\
+		g++ In something:"^(\\S+): (In .*) `(.*)':$":::Plain::\n\
+		g++ In something file:"\\1":""::Text Arg:g++ In something:C\n\
+		g++ In what:"\\2":""::Preprocessor:g++ In something:C\n\
+		g++ In file included:"^(In file included)? +from (\\S*):([0-9]+)[,:]$":::Plain::\n\
+		g++ in file:"\\1":""::Preprocessor:g++ In file included:C\n\
+		g++ file:"\\2":""::Text Arg:g++ In file included:C\n\
+		g++ line:"\\3":""::String2:g++ In file included:C\n\
+		g++ line:"\\3":""::String2:g++ In file included:C\n\
+		g++ undefined ref:"^.*: (?:(?:undefined reference to)|(?:more undefined references to)) `.*'(?: follow)?$":::Flag::\n\
+		g++ link error:"^(?:[^: ]+\\(\\.text.*?\\)): (?:.*)$":::Flag::\n\
+		error detected:"^([\\d]+ error) detected in the compilation of ""(.*)""\\.$":::Label::\n\
+		error detected - number of err:"\\1":""::Flag:error detected:C\n\
+		error detected - file name:"\\2":""::Text Arg:error detected:C\n\
+		grep line:"^([^: ]+):([0-9]+):(.*)$":::Plain::\n\
+		grep nline:"\\2":""::String2:grep line:C\n\
+		grep file:"\\1":""::Text Arg:grep line:C\n\
+		grep_py line:"^(\\S+?):(\\((?:[0-9]+),(?:[0-9]+)\\)):":::Plain::\n\
+		grep_py arrow:"^  -\\>":::Keyword::\n\
+		grep_py nline:"\\2":""::String2:grep_py line:C\n\
+		grep_py file:"\\1":""::Text Arg:grep_py line:C\n\
+		replace grep line:"^(MODIFICATIONS|IGNORED LINES|REPLACEMENTS):$":::Keyword::\n\
+		assert line:"^(.*): (.*):([0-9]+): (?:.*)(Assertion.*failed.*)$":::Plain::\n\
+		assert - prog:"\\1":""::LaTeX Math:assert line:C\n\
+		assert - file:"\\2":""::String2:assert line:C\n\
+		assert - line:"\\3":""::Text Arg:assert line:C\n\
+		assert - failed:"\\4":""::Flag:assert line:C\n\
+		redirection:"^\\-\\>.*$":::LaTeX Math::\n\
+		dox notice:"^Notice: .*$":::Text Key::\n\
+		dox error:"^Error: .*$":::Flag::\n\
+		latex error:"^! .*":::Flag::\n\
+		latex warning:"^LaTeX Warning:(?n.*?)\\.":::Text Key::\n\
+		latex remark:"^(?:(?:Over)|(?:Under))full \\\\hbox.*":::Text Key1::\n\
+		bibtex error:"---line ([0-9]+) of file .*":::Flag::\n\
+		command:"^(?:(?:purify)|(?:cc)|(?:CC)|(?:g\\+\\+)|(?:gcc)|(?:ar)|(?:makedepend)|(?:.?make)|(?:uic)|(?:moc)|(?:bibtex)|(?:latex)|(?:xdvi)|(?:dvips))(?=\\s)":::Keyword::\n\
+		mp3line:"^(.*\\.mp3DB:)?.*\\.mp3":::Identifier::\n\
+		mp3cd:"\\1":""::Identifier1:mp3line:C\n\
+		python file and line:"^ +File "".*"", line [0-9]+":::Text Key::\n\
+		python error:"^(?:\\l+)Error: .*":::Flag::\n\
+		cvs error:"^(?:(?:.*Up-to-date check failed for .*)|(?:[C] .*))$":::Flag::\n\
+		cvs warning:"^(?:[M?RAPU] .*)$":::Text Key::\n\
+	}\n\
+	Prolog:1:0{\n\
+		Boxed Comment:"/\\*":"\\*/"::Comment::\n\
+		Line Comment:"%":"$"::Comment::\n\
+		Syntactic sugar:":-|\\.":::Text Arg::\n\
+		Prolog built-in:"<assert[a-z]?>|<retract[a-z]?>|<halt>|<consult>|<is>":::Keyword::\n\
+		Predicate:"<[a-z]\\w*>":::Subroutine::\n\
+		Variable:"<[A-Z]\\w*>":::Identifier1::\n\
+	}\n\
+	txtPerso:1:0{\n\
+		comment:"^#":"$"::Comment::D\n\
+		bold:"\\*.*?\\*":::LaTeX Math::\n\
+		bold multiline:"^\\*{3}$":"^\\*{3}$"::LaTeX Math::\n\
+		date:"[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]":::String2::\n\
+		time:"[0-9][0-9]?:[0-9][0-9]:[0-9][0-9]":::String::\n\
+	}\n\
+	Mel:1:0{\n\
+		Comment:"//":"$"::Comment::\n\
+		Data Type:"<(int|float|vector|string|matrix)>":::Text Arg::\n\
+		Boolean Constant:"<(yes|no|on|off|true|false)>":::Text Key::\n\
+		Variable:"<\\$([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)*>":::Identifier::\n\
+		SquareBrackets:"\\[":"\\]"::Identifier::\n\
+		SquareBracketContents:".":::Plain:SquareBrackets:\n\
+		LimitFunctions:"<(abs|ceil|floor|clamp|min|max|sign|trunc)>":::Text Comment::\n\
+		ExponentialFunctions:"<(exp|log|log10|pow|sqrt)>":::Subroutine::\n\
+		TrignVectorFunctions:"<((a|)(cos|sin|tan|tan2)(d|h|)|hypot|angle|cross|dot|mag|rot|unit)>":::Subroutine::\n\
+		ConversionFunctions:"<(hsv|rgb|rad|deg)_to_(hsv|rgb|rad|deg)>":::Subroutine::\n\
+		MiscFunctions:"<(clear|size|sort|gauss|noise|dnoise|rand|sphrand|seed|linstep|smoothstep|hermite|eval|print|system)>":::Subroutine::\n\
+		OtherFunctions:"<(alias|catch|chdir|env|error|exists|get(env|pid)|putenv|pwd|source|trace|warning|whatIs|constrainValue|erf|erfc|expm1|fmod|gamma|log1p|bessel(j0|j1|jn|yn)|((g|)match)|size|strcmp|(subst(itute|ring))|to(kenize|lower|upper)|(f|p)(open|close|flush|print|rewind|eof|getline|getword|write|read|iletest))>":::Subroutine::\n\
+		OptionArgument:"<-[a-z]+>":::Text Arg2::\n\
+		BackTicks:"`":"`":"\\n":String2::\n\
+		String:"""":""""::String1::\n\
+		GlobalProcedures:"global|proc":::Storage Type::\n\
+	}\n\
+	Mk Expander:3:0{\n\
+		comment:"^#.*":::Comment::\n\
+		block:"^(\\S.*):\\s*\\n(\\{)":"^(\\})"::Plain::\n\
+		brace:"\\2":"\\1"::Keyword:block:C\n\
+		language:"\\1":""::Storage Type:block:C\n\
+		comment:"^#.*":::Comment:block:\n\
+		line:"^\\t(\\S+?)=":"$"::Plain:block:\n\
+		shorcut:"\\1":""::Identifier:line:C\n\
+		esc:"\\\\[^\\\\]":::LaTeX Math:line:\n\
+		non esc:"\\\\\\\\":::Plain:line:\n\
+		block syntax error:".*":::Flag:block:\n\
+		syntax error:".*":::Flag::\n\
+	}\n\
+	BibTeX:1:0{\n\
+		Entry:"@([a-zA-Z0-9]*)":::Identifier::\n\
+		Field:"(.*)[ \\t]=":::Plain:Contents:\n\
+		Month:"<(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)>":::String::\n\
+		Contents:"\\{(.*),":"}"::Plain::\n\
+		BracketString:"\\{":"}"::String2:Contents:\n\
+		QuoteString:"""":""""::String:Contents:\n\
+		SubString:"\\{":"}"::String2:QuoteString:\n\
+		SubString:"\\{":"}"::String2:BracketString:\n\
+		Ref:"\\1":""::Text Key:Contents:C\n\
+		Comment:"%":"$"::Text Comment::D\n\
+	}
+nedit.languageModes: 	Ada:.ada .ad .ads .adb .a:::::::\n\
+	Awk:.awk:::::::\n\
+	C++:.cg .cc .hh .C .H .h .c .i .cxx .hxx .cpp .hpp .inl .lzz:".*-\\*- C\\+\\+ -\\*-":::::".,/\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
+	CSS:css::Auto:None:::".,/\\`'!|@#%^&*()=+{}[]"":;<>?~":\n\
+	Csh:.tcsh .csh .cshrc .login .logout .bindkeyrc .completerc .aliasrc cshrc login logout bindkeyrc completerc aliasrc:"^[ \\t]*#[ \\t]*![ \\t]*/bin/t?csh"::::::\n\
+	Fortran:.f .f77 .for:::::::\n\
+	Java:.java:::::::\n\
+	JavaScript:.js:::::::\n\
+	LaTeX:.tex .sty .cls .dtx .ins .pstex_t:::::::\n\
+	Lex:.lex:::::::\n\
+	Makefile:.project Make-config Makefile Makefile.add makefile .gmk .pro .conf .doxyconf:"#+\\n# Makefile for building"::Continuous:4:4:",\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
+	Matlab:.m .oct .sci:::::::\n\
+	NEdit Macro:.nm .neditmacro:::::::\n\
+	Pascal:.pas .p .int:::::::\n\
+	Perl:.pl .pm .p5 .PL:"^[ \\t]*#[ \\t]*!.*perl":Auto:None:::".,/\\\\`'!$@#%^&*()-=+{}[]"":;<>?~|":\n\
+	PostScript:.ps .eps .epsf .epsi::::::"/%(){}[]<>":\n\
+	Python:.py:"^#!.*python":Smart:Continuous:::"!""#$%&'()*+,-./:;<=>?@[\\\\]^`{|}~":\n\
+	Regex:.reg .regex:"\\(\\?[:#=!iInN].+\\)":None:Continuous::::\n\
+	SGML HTML:.sgml .sgm .html .htm:"\\<[Hh][Tt][Mm][Ll]\\>"::::::\n\
+	SQL:.sql:::::::\n\
+	Sh Ksh Bash:.sh .bash .ksh .profile .bashrc .bash_logout .bash_login .bash_profile:"^[ \\t]*#[ \\t]*![ \\t]*/.*bin/(sh|ksh|bash)"::::::\n\
+	Tcl:.tcl .tk .itcl .itk::Smart:None::::\n\
+	VHDL:.vhd .vhdl .vdl:::::::\n\
+	Verilog:.v:::::::\n\
+	XML:.xml .xsl .dtd:"\\<(?i\\?xml|!doctype)"::None:::"<>/=""'()+*?|":\n\
+	X Resources:.Xresources .Xdefaults .nedit Xresources Xdefaults .rc:"^[!#].*([Aa]pp|[Xx]).*[Dd]efaults"::::::\n\
+	Yacc:.y::::::".,/\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
+	Mk Output::"^NEdit buffer: .*":None:Continuous:::".,/\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
+	Mk Expander:expander.data::None:None:::",\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
+	txtPerso:.txt:"# *txtPerso"::::::\n\
+	Mel:.mel::Smart:None::::\n\
+	BibTeX:.bib:::::::
+nedit.styles: 	Plain:black:Plain\n\
+	Comment:gray50:Italic\n\
+	Comment2:gray40:Italic\n\
+	Keyword:orange3:Bold\n\
+	Storage Type:brown:Bold\n\
+	Storage Type1:saddle brown:Bold\n\
+	String:darkgreen:Italic\n\
+	String1:darkgreen:Bold Italic\n\
+	String2:green4:Bold Italic\n\
+	Preprocessor:MediumPurple3:Bold\n\
+	Preprocessor1:MediumPurple4:Bold\n\
+	Character Const:darkGreen:Plain\n\
+	Numeric Const:#1111cc:Bold\n\
+	Numeric Const2:#111166:Bold\n\
+	Identifier:brown:Plain\n\
+	Identifier1:RoyalBlue4:Plain\n\
+	Identifier2:SteelBlue:Plain\n\
+	Subroutine:brown:Plain\n\
+	Subroutine1:chocolate:Plain\n\
+	Ada Attributes:purple4:Bold\n\
+	Label:red:Italic\n\
+	Flag:red:Bold\n\
+	Text Comment:SteelBlue4:Italic\n\
+	Text Key:VioletRed4:Bold\n\
+	Text Key1:VioletRed4:Plain\n\
+	Text Arg:RoyalBlue4:Bold\n\
+	Text Arg1:SteelBlue4:Bold\n\
+	Text Arg2:RoyalBlue4:Plain\n\
+	Text Escape:gray30:Bold\n\
+	LaTeX Math:black:Bold\n\
+	Pointer:#660000:Bold\n\
+	Regex:#009944:Bold\n\
+	Warning:brown2:Italic
+nedit.smartIndentInit: 	C++:Default\n\
+	Python:Default\n\
+	Matlab:Default
+nedit.smartIndentInitCommon: 	load_macro_file($MK_ENV_VAR["NEDIT_HOME"] "/perso/smart_indent.nm")\n
+nedit.autoWrap: Continuous
+nedit.wrapMargin: 0
+nedit.autoIndent: Auto
+nedit.autoSave: False
+nedit.openInTab: True
+nedit.saveOldVersion: False
+nedit.showMatching: Range
+nedit.matchSyntaxBased: True
+nedit.highlightSyntax: True
+nedit.backlightChars: True
+nedit.searchDialogs: False
+nedit.beepOnSearchWrap: False
+nedit.retainSearchDialogs: False
+nedit.searchWraps: True
+nedit.stickyCaseSenseButton: True
+nedit.repositionDialogs: True
+nedit.autoScroll: False
+nedit.appendLF: True
+nedit.sortOpenPrevMenu: True
+nedit.statisticsLine: True
+nedit.iSearchLine: True
+nedit.sortTabs: False
+nedit.tabBar: True
+nedit.tabBarHideOne: False
+nedit.toolTips: True
+nedit.globalTabNavigate: False
+nedit.lineNumbers: True
+nedit.pathInWindowsMenu: True
+nedit.warnFileMods: True
+nedit.warnRealFileMods: True
+nedit.warnExit: True
+nedit.searchMethod: RegExp
+nedit.textRows: 40
+nedit.textCols: 80
+nedit.tabDistance: 4
+nedit.emulateTabs: 0
+nedit.insertTabs: True
+nedit.textFont: -b&h-lucidatypewriter-medium-r-normal-sans-18-180-75-75-m-110-iso8859-1
+nedit.boldHighlightFont: -b&h-lucidatypewriter-bold-r-normal-sans-18-180-75-75-m-110-iso8859-1
+nedit.italicHighlightFont: -b&h-lucidatypewriter-medium-o-normal-sans-18-180-75-75-m-110-iso8859-1
+nedit.boldItalicHighlightFont: -b&h-lucidatypewriter-bold-o-normal-sans-18-180-75-75-m-110-iso8859-1
+nedit.textFgColor: #000000
+nedit.textBgColor: #cccccc
+nedit.selectFgColor: #000000
+nedit.selectBgColor: #eeeeee
+nedit.hiliteFgColor: #000000
+nedit.hiliteBgColor: #cceecc
+nedit.lineNoFgColor: #aaaaaa
+nedit.cursorFgColor: #ff0000
+nedit.smartTags: False
+nedit.prefFileRead: True
+nedit.titleFormat: [%s] %f (%S)

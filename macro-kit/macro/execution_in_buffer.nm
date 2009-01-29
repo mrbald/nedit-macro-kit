@@ -1,0 +1,303 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: execution in NEdit                     #
+##################################################
+
+
+define mk_get_predef_cmd
+{
+	num=$1
+	
+	prj=mk_find_project(mk_action_path())
+	key="CMD"$1
+	
+	if (key in prj)
+	{
+		return prj[key]
+	}
+	
+	if($n_args>1)
+	{
+		lang=$2
+	}
+	else
+	{
+		lang=mk_predef_cmd_lang()
+	}
+	
+	if(lang in $mk_fnkey_cmd)
+	{
+		if($1 in $mk_fnkey_cmd[lang])
+		{
+			return $mk_fnkey_cmd[lang][$1]
+		}
+	}
+	
+	return ""
+}
+
+
+# execute command dialog
+define mk_execute_in_buffer_dialog
+{
+	str_dialog= "Enter unix command:\n   - PATH: " mk_action_path() "\n   - HOST: " mk_action_host() "\n%n -> file name, %p -> file path"
+	
+	if ( $mk_last_command=="")
+	{
+		command=string_dialog(str_dialog,"execute","dismiss")
+		if ($string_dialog_button!=1) return
+	}
+	else
+	{
+		command=string_dialog(str_dialog,"execute","Re: " $mk_last_command,"dismiss")
+		if ($string_dialog_button==2) command=$mk_last_command
+		else if ($string_dialog_button!=1) return
+	}
+
+	if(command!="") mk_execute_in_buffer_last(command)
+}
+
+# execute command dialog
+define mk_execute_in_buffer_list
+{
+	if($mk_predef_cmd[]==0) return
+	
+	res=list_dialog("Choose one:",mk_unsplit($mk_predef_cmd,"key"),"Ok","Cancel")
+	
+	if((res!="") && ($list_dialog_button==1))
+	{
+		mk_execute_in_buffer_last($mk_predef_cmd[res])
+	}
+}
+
+# execute the last command
+define mk_execute_in_buffer_last
+{
+	if($n_args>=1) command=$1
+	else command=$mk_last_command
+
+	if(command!="")
+	{
+		tmp = replace_in_string(command,"%n",$file_name,"literal")
+		if(tmp!="") command = tmp
+		tmp = replace_in_string(command,"%p",$file_path,"literal")
+		if(tmp!="") command = tmp
+		tmp = replace_in_string(command,"%pn",$file_path $file_name,"literal")
+		if(tmp!="") command = tmp
+
+		$mk_last_command=command
+		mk_extended_execute_in_buffer(command,mk_action_host(),"External")
+	}
+	else
+	{
+		mk_execute_in_buffer_dialog()
+	}
+}
+
+# execute binary command dialog
+define mk_execute_in_buffer_bin_dialog
+{
+	path=mk_action_path()
+	str_dialog= "Choose file to execute:\n   - PATH: " path "\n   - HOST: " mk_action_host()
+	maxdepth = ""
+	if($mk_uc_compatibility["maxdepth"]) maxdepth = "-maxdepth 3"
+
+	tmp_command = $mk_uc["find"] " . " maxdepth " -perm -u+x -type f"
+	list_executable=mk_shell_command("cd  " mk_ssc(path) ";" tmp_command)
+	if (search_string(list_executable,"\\S",0,"regex")==-1)
+	{
+		dialog("No executable unix file found in " path)
+		return
+	}
+	command=list_dialog(str_dialog,list_executable,"execute","dismiss")
+	if ($list_dialog_button==1)
+	{
+		if((command!=""))
+		{
+			fileName=mk_filename(command,path)
+			mk_execute_in_buffer_bin_last(fileName)
+		}
+		else
+		{
+			n = search_string(list_executable,"\n",0,"regex") + 1
+			l = length(list_executable)
+			if(n==l) 
+			{
+				fileName=mk_filename(substring(list_executable,0,l-1),path)
+				mk_execute_in_buffer_bin_last(fileName)
+			}
+		}
+	}
+}
+
+# execute the last command
+define mk_execute_in_buffer_bin_last
+{
+	if($n_args>=1) command=$1
+	else command=$mk_last_executable
+
+	if(command!="")
+	{
+		$mk_last_executable=command
+		mk_extended_execute_in_buffer(command,mk_action_host(),"External")
+	}
+	else
+	{
+		mk_execute_in_buffer_bin_dialog()
+	}
+}
+
+# execute predefined unix command
+define mk_execute_predefined_unix_command
+{
+	cmdNum=$1
+	params=$empty_array
+	if($n_args>1) params[$2]=1
+	if($n_args>2) params[$3]=1
+
+	host=""
+	if("host" in params)
+	{
+		host=list_dialog("Choose host:",$mk_host_list,"ok","dismiss")
+		if($list_dialog_button!=1) host=""
+	}
+	if(host=="") host=mk_action_host()
+	
+	if ((cmdNum<1) || (cmdNum>8))
+	{
+		dialog("mk_set_command: wrong arguments")
+		return ""
+	}
+	else
+	{
+		command=mk_get_predef_cmd(cmdNum)
+		if(command=="") return""
+		
+		lang="External["mk_main_language()"]"
+		mk_extended_execute_in_buffer(command,host,lang)
+	}
+}
+
+#show predefined unix command
+define mk_show_command
+{
+	key=mk_predef_cmd_lang()
+	str = ""
+	str = str "[1] F9: " mk_get_predef_cmd(1,key) "\n"
+	str = str "[2] ALT+F9: " mk_get_predef_cmd(5,key) "\n"
+	str = str "[3] F10: " mk_get_predef_cmd(2,key) "\n" 
+	str = str "[4] ALT+F10: " mk_get_predef_cmd(6,key) "\n"
+	str = str "[5] F11: " mk_get_predef_cmd(3,key) "\n" 
+	str = str "[6] ALT+F11: " mk_get_predef_cmd(7,key) "\n"
+	str = str "[7] F12: " mk_get_predef_cmd(4,key) "\n"
+	str = str "[8] ALT F12: " mk_get_predef_cmd(8,key)
+	res = list_dialog("Unix command list:",str,"ok","cancel")
+	if(($list_dialog_button==1) && (res!=""))
+	{
+		num=substring(res,1,2)
+		mk_execute_predefined_unix_command(num)
+	}
+}
+
+define mk_get_command_param
+{
+	main_re="^\\s*\\{(.*)}\\s*(.*)\\s*$"
+	res["stop"]=0
+	res["command"]=replace_in_string($1, main_re,"\\2", "regex", "copy")
+	param_str=replace_in_string($1, main_re,"\\1","regex")
+	param_array=split(param_str,",")
+	re="\\s*(\\w+)='(.+)'\\s*"
+	count=0
+	for (i in param_array)
+	{
+		cmd=param_array[i]
+		beg=replace_in_string(cmd,re,"\\1","regex")
+#		dialog(cmd,re,beg)
+		if(beg=="") continue
+		end=replace_in_string(cmd,re,"\\2","regex")
+		if(beg=="dialog")
+		{
+			count++
+			beg=beg"_"count
+			resDialog=string_dialog(end,"Ok","Dismiss")
+			if($string_dialog_button==1)
+			{
+				res["command"]=replace_in_string(res["command"],"\\"count, resDialog, "copy")
+			}
+			else
+			{
+				res["stop"]=1
+			}
+		}
+		if(beg=="macro")
+		{
+			mk_interpret(end)
+		}
+		res[beg]=end
+	}
+	
+	
+	if(res["command"]=="")
+	{
+		res["stop"]=1
+	}
+	
+#	dialog(mk_unsplit(res,"nice"))
+	return res
+}
+
+define mk_extended_execute_in_buffer
+{
+	if($n_args==0)
+	{
+		dialog("mk_extended_execute_in_buffer: Wrong number of arguments")
+		return
+	}
+	
+	res=mk_get_command_param($1)
+	
+	if(res["stop"]) return
+	
+	path=mk_action_path()
+	if("path" in res) path=mk_pathname(res["path"],path)
+	
+	host=""
+	if($n_args>1) host=$2
+	if("host" in res) host=res["host"]
+	
+	lang=""
+	if($n_args>2) lang=$3
+	if("lang" in res) lang=res["lang"]
+	
+	mk_execute_in_buffer(res["command"],path,host,lang)
+}
+
+# return the langage mode to use
+define mk_predef_cmd_lang
+{
+	res=mk_main_language(mk_action_path())
+	if(res in $mk_fnkey_cmd)
+	{
+		return res
+	}
+	else
+	{
+		if($language_mode in $mk_fnkey_cmd)
+		{
+			return $language_mode
+		}
+		else
+		{
+			return "default"
+		}
+	}
+}
+
+
+define mk_init_execute_in_buffer
+{
+	$mk_last_executable=""
+	$mk_last_command=""
+}
+
+mk_init_execute_in_buffer()

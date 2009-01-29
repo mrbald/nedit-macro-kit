@@ -1,0 +1,32 @@
+%\\documentclass[a4,11pt]{report}
+\\documentclass[a4]{report}
+
+%utiliser les accents ιθ... :
+\\usepackage[latin1]{inputenc}
+%codage je sais pas quoi... a utiliser en france avec le package times :
+\\usepackage[T1]{fontenc}
+%inclure des graphiques :
+\\usepackage{graphicx}
+%inclure une jolie fonte times qui s'imprime bien :
+\\usepackage{times}
+
+% ou trouver les figures eps :
+\\graphicspath{{./picture/}}
+
+% le titre :
+\\title{}
+
+% l'auteur :
+\\author{}
+
+% la date :
+\\date{\u(date '+%Y/%m/%d')\d}
+
+% debut du document :
+\\begin{document}
+
+% insere le titre
+\\maketitle
+
+
+\\end{document}

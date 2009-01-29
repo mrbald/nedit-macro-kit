@@ -1,0 +1,268 @@
+# nedit expander definition (in the process order):
+# \s(file_name) : save file if the windows is empty. It is possible to use \1,\2...
+# \f(file_name) : load a file (if you want to use more than one line)
+# \F(file_name) : load a file (if you want to use more than one line) and indent
+# \u(...) : unix command
+# \n : new line
+# \N : new line and indent (if the line is empty, this operation is ignored. Use \n\T to force it.)
+# \t : tabulation
+# \T : ident
+# \c : insert clipboard
+# \C : insert clipboard and indent
+# \d : delete previous character
+# \! : cursor position
+# \x : nothing.
+# \l(...) : set a new langage mode
+# \\ : char \    ( and \ + other characters -> the character)
+# \0(Comment) : declaration of parameter 0 (with a dialog box).  The (Comment) are optional. 
+# \1(Comment) : declaration of parameter 1
+# ...
+# \9(Comment) : declaration of parameter 9
+# \0 : insert parameter 0 (with a dialog box).  The (Comment) are optional. 
+# \1 : insert parameter 1
+# ...
+# \9 : insert parameter 9
+
+#
+# all line whose first non blank character is # is considered as a comment
+#
+
+
+# shortcut available in any language:
+general:
+{
+	me=Frank Perbet
+	jd=Juanito del Didieto
+	em=frank.perbet@imag.fr
+	da=\u(date '+%Y/%m/%d')\d
+	jda=\u(date '+%A %d %B %Y')\d
+	ti=\u(date '+%H:%M:%S')\d
+	to=TODO_FKP
+}
+
+
+# shortcut available in any language, amd also available as template files:
+template:
+{
+	glsl=\f(./expander_files/sw.glsl)
+	qpro=\1(Project name:)\f(./expander_files/qmake.pro)\s(\1.pro)
+	report=\1(Tex file name:)\f(./expander_files/report.tex)\s(\1.tex)
+	letter=\1(Tex file name:)\f(./expander_files/letter.tex)\s(\1.tex)
+	cpp=\1(C++ source file name:)\f(./expander_files/c++.cpp)\s(\1.cpp)
+	hpp=\1(C++ header file name:)\f(./expander_files/c++.hpp)\s(\1.hpp)
+	inl=\1(C++ inline file name:)\f(./expander_files/c++.inl)\s(\1.inl)
+	html=\1(html file name:)\f(./expander_files/generic.html)\s(\1.html)
+	py=\1(python file name:)\f(./expander_files/python.py)\s(\1.py)
+	npro=\f(./expander_files/nedit.project)\s(.nedit-project)
+}
+
+Mel:
+{
+	gproc=global proc \!()\N{\N\t\N}
+	proc=proc \!()\N{\N\t\N}
+	if=if(\!)\N{\N\t\N}
+	el=else\N{\N\t\!\N}
+	ei=else if (\!)\N{\N\t\N}
+	ie=if (\!)\N{\N\t\N}\Nelse\N{\N\t\N}
+	fo=for (\!;;)\N{\N\t\N}
+	wh=while (\!)\N{\N\t\N}
+	di=jam_MessageDialog(\!);
+	re=return \!;
+}
+
+JavaScript:
+{
+	if=if(\!)\N{\N\t\N}
+	el=else\N{\N\t\!\N}
+	ei=else if (\!)\N{\N\t\N}
+	ie=if (\!)\N{\N\t\N}\Nelse\N{\N\t\N}
+	fo=for (\!;;)\N{\N\t\N}
+	wh=while (\!)\N{\N\t\N}
+	di=alert(\!);
+	re=return \!;
+	func=\1(name:)function \1()\N{\N\t\!\N}
+}
+
+C++:
+{
+	if=if(\!)\N{\N\t\N}
+	el=else\N{\N\t\!\N}
+	ei=else if (\!)\N{\N\t\N}
+	ie=if (\!)\N{\N\t\N}\Nelse\N{\N\t\N}
+	fo=for (\!;;)\N{\N\t\N}
+	wh=while (\!)\N{\N\t\N}
+	
+	whit=\1(type:)\2(container:)\1::iterator current = \2.begin();\N\1::iterator end = \2.end();\Nwhile (current!=end)\N{\N\t\!\N\tcurrent++;\N}
+	\#if=#ifdef \!\n#else\n#endif\n
+	
+	fod=\1(index:)for (unsigned int \1=0;\1<\!;\1++)\N{\N\t\N}
+	sw=switch (\!)\N{\N\tcase :\N\t{\N\t\t\N\t\tbreak;\N\t}\N\tdefault :\N\t{\N\t\t\N\t\tbreak;\N\t}\N}
+	na=\1(namespace:)namespace \1\N{\N\t\!\N} // end of \1
+	cl=\1(class:)class \1\N{\Npublic:\N\t\!\N}; // end of \1
+	un=using namespace \!;
+	ins=#include <\!>
+	in=#include "\!"
+	tc=try\N{\N\t\N}\Ncatch\N{\N\t\N}
+	cc=const_cast<\!>()
+	sc=static_cast<\!>()
+	dc=dynamic_cast<\!>()
+	rc=reinterpret_cast<\!>()
+	ma=int main(int argc, char** argv)\n{\n\t\!\n}
+	<<=\1(class name:)/// \1 output.\Ninline std::ostream& output(std::ostream& os) const\N{\N\tos<<"\1:"<<std::endl;\N\treturn os;\N}\N\Ninline friend std::ostream& operator<<(std::ostream& os, const \1& obj)\N{ return obj.output(os); }
+	>>=\1(class name:)/// \1 input.\Nfriend std::istream& operator>>(std::istream& is, \1& obj)\N{\N\treturn is;\N}\N
+	no=// Nothing
+	as=assert(\!);
+	fw=// forward declaration\nclass \!
+
+#opengl:
+	glb=\1(primitive name:)glBegin(\1);\N\tglVertex(\!);\NglEnd(); // \1
+	glpp=glPushMatrix();\N\!\NglPopMatrix();
+	glli=glLoadIdentity();
+#output and input stuff:
+	de=util::dbg(5)<<\!<<'\\n';
+	dev=\1(variable:)util::dbg(\!)<<"\1 = "<<\1<<'\\n';
+	ce=std::cerr<<"\!"<<std::endl;
+	cev=\1(variable:)std::cerr<<"\1 = "<<\1<<std::endl;
+	co=std::cout<<\!<<std::endl;
+	cov=\1(variable:)std::cout<<"\1 = "<<\1<<std::endl;
+	os=os<<\!<<std::endl;
+	osv=\1(variable:)os<<"\1 = "<<\1<<std::endl;
+	gle=glEnable(\!)\N
+	gld=glDisable(\!)\N
+	gled=glEnable(\!);\N\NglDisable(\1);\N
+	glde=glDisable(\!);\N\NglEnable(\1);\N
+	
+	dox=\N/*!\N\t\\brief \!\N*/
+	doxfile=\N/*!\N\t\\file main/\!\N\t\\brief \N*/
+	doxname=\N/*!\N\t\\name \!\N\t\\{\N*/\N\N/// \\}
+	
+	but=dpGV::button(1,\!)
+	sli=dpGV::sliderF(1,\!)
+	i_but=dpGV::initButton(1,\!,"txt",false);
+	i_sli=dpGV::initSlider(1,\!,"txt",50,100);
+	fp=fprintf(stderr,"\!");
+	fpv=\1(var:)fprintf(stderr,"\1=%d\!\\n",\1);
+	dgh=\1(class name:)\f(./expander_files/dgclass.hpp)
+	dgc=\1(class name:)\f(./expander_files/dgclass.cpp)
+
+
+	cgc=// cgc-params = \!
+}
+
+LaTeX:
+{
+	bend=\1(begin what?:)\\begin{\1}\N\!\N\\end{\1}
+	item=\N\\begin{itemize}\N\\item\!\N\\end{itemize}
+	des=\N\\begin{description}\N\\item\!\N\\end{description}
+	it=\N\\item\!
+	re=\\ref{\!}
+	ci=\\cite{\!}
+	nc=\\newcommand{\!}{}\N
+	pa*=\\part*{\!}\N
+	pa=\\part{\!}\N
+	ch*=\\chapter*{\!}\N
+	ch=\\chapter{\!}\N
+	se=\\section{\!}\N
+	su=\\subsection{\!}\N
+	ss=\\subsubsection{\!}\N
+	i=\\index{\!}\N
+	to=\\todo{\!}\N
+	un=\\uncomplete{}\N
+	de=\\definition{\!}{}\N
+	e=\\emph{\!}
+	na=\\name{\!}
+	b=\\blur{\!}
+	vs=\\vspace{\!}
+	t=\\term{\!}
+	fr=\\frac{\!}{}
+	fn=\\footnote{\!}
+	j=\\jecite{\!}
+	cff=(cf. figure \\ref{\!})
+	cf=(cf. \\ref{\!})
+#	fig=\\begin{figure}\N\\includegraphics{\!}\N\\caption{}\N\\label{}\N\\end{figure}
+	fig=\1(figname:)\\begin{figure}\N\\begin{center}\N\\input{\1.pstex_t}\N\\caption{\!}\N\\label{\1}\N\\end{center}\N\\end{figure}
+	xfig=\1(figname:)\\begin{figure}\N\\begin{center}\N\\figfile{\1}\N\\caption{\!}\N\\label{\1}\N\\end{center}\N\\end{figure}
+	la=\\label{\!}
+	en=\\en{\!}
+}
+
+NEdit Macro:
+{
+	if=if(\!)\N{\N\t\N}
+	el=else\N{\N\t\!\N}
+	ei=else if (\!)\N{\N\t\N}
+	ie=if (\!)\N{\N\t\N}\Nelse\N{\N\t\N}
+	fo=for (\!;;)\N{\N\t\N}
+	wh=while (\!)\N{\N\t\N}
+	
+	de=define \!\N{\N\t\N}
+	di=dialog(\!)
+}
+
+SGML HTML:
+{
+	re=<a href="\!"> </a>
+	rev=\1(value:)<a href="\1">\1</a>
+	i=<i>\!</i>
+	a=<a>\!</a>
+	center=<center>\!<center>
+	h1=<h1 align='left'>\!</h1>
+	h2=<h2 align='left'>\!</h2>
+	h3=<h3 align='left'>\!</h3>
+	b=<b>\!</b>
+	p=<p>\n\!\n</p>
+	mm=<a href="mailto:frank.perbet@imag.fr">mail me!</a>
+	ta=<table  width="100%" cellpadding=0 border=0 cellspacing=0>\n<td align=middle>\n\t\!\n</td>\n</table><br>
+	ce=<center>\!</center>
+	fo=<font color="#bb0000" size=5> \! </font>
+	im=<img src="\!" align="middle" border="1">
+	de=<!--description-->\n<meta name="author"   content="frank perbet">\n<meta name="keywords" content="\!">
+	hp=<a href="http://www-evasion.imag.fr/membres/frank.perbet/index.html">frank perbet home page</a>
+	mk=<i>nedit macro-kit</i>
+	mov=\1(mov name:)\f(./expander_files/html_dg_movi.html)
+	se=\1(section name:)<b><font size=+1>\1</font></b><br><br>
+	ss=\1(subsection name:)<b>\1</b><br><br>
+	head=\1(title:)<title>\1</title>\n<center>\n<font size=+2>\1</font>\n</center>
+	foot=<!--*************************************************-->\n<hr>\n<a href="\!">frank perbet home page</a><br>
+	li=<li>\n\!\n</li>
+	form=<form method="get">\n\t\!\n</form>
+	input=<input type="\!" value="" onclick="">
+	jscript=<script language="jscript" src="\!"></script>;
+	javascript=<script language="javascript" src="\!"></script>;
+}
+
+Makefile:
+{
+	animal=# boost and animal\nINCLUDEPATH *= $(ANIMAL) $(BOOST)\nDEFINES *= QT_CLEAN_NAMESPACE\nirix-n32:INCLUDEPATH *= $(BOOST)/boost/compatibility/cpp_c_headers\n
+	inc=include( $(CGTOOLS)/\! )
+
+}
+
+Python:
+{
+	env=#!/usr/bin/env python
+	ie=if \!:\N\t\Nelse:\N\t
+	wh=while \!:\N\t
+	pr=\1(variable:)print '\1='+str(\1)
+	for=\1(index:)for \1 in range(0,\!):\N\t\N
+	pdb=pdb.set_trace()
+}
+
+BibTeX:
+{
+	in=@InProceedings{\!,\N\tauthor ="",\N\ttitle = "",\N\tbooktitle ="",\N\tyear=""\N}\N
+	book=@book{\!,\N\tauthor ="",\N\ttitle = "",\N\tpublisher ="",\N\tyear=""\N}\N
+	manual=@manual{\!,\N\tauthor ="",\N\ttitle = "",\N\tyear=""\N}\N
+}
+
+GlSl:
+{
+	pif=\1(variable:)#if \1\!\n#else //\1\n#endif //\1\n
+	re=return \!;
+	if=if(\!)\N{\N\t\N}
+	el=else\N{\N\t\!\N}
+	ei=else if (\!)\N{\N\t\N}
+	ie=if (\!)\N{\N\t\N}\Nelse\N{\N\t\N}
+	fo=for (\!;;)\N{\N\t\N}
+	fod=\1(index:)for (unsigned int \1=0;\1<\!;\1++)\N{\N\t\N}
+}

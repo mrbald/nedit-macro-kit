@@ -1,0 +1,610 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: jump to interesting line               #
+##################################################
+
+
+
+
+
+
+# goto file and line
+# parameters are:
+# "any" : to use any possible selection
+# "any_dialog" : to use any possible selection, and pop up a dialog box
+# "rec" : search recursively
+# "auto_select" : auto selection on
+# not in the window
+define mk_goto_error
+{
+	params["special"]=0
+	params["any"]=0
+	params["any_dialog"]=0
+	params["rec"]=0
+	params["auto_select"]=0
+	params["cursor"]=$cursor
+	params["relax"]=0
+	params["first"]=1
+	params["other"]=0
+	params["local"]=1
+	
+	if($n_args>=1) if($1 in  params) params[$1]=1
+	if($n_args>=2) if($2 in  params) params[$2]=1
+	if($n_args>=3) if($3 in  params) params[$3]=1
+	if($n_args>=4) if($4 in  params) params[$4]=1
+	
+	# implicit declaration
+	if(params["any_dialog"]) params["any"]=1
+	
+	# variable use for mk_goto_next_interesting_line
+	$mk_nil_document_name=$file_path $file_name
+	
+	# get window selection auto
+	sel1=get_selection()
+	if(sel1!="")
+	{
+		params["local_sel"]=sel1
+	}
+	else
+	{
+		sel2=get_selection("any")
+		if((sel2!="") && (params["any"]))
+		{
+			if (params["any_dialog"])
+			{
+				n=dialog("Do you want to look for:\n" sel2,"Ok", "Local", "Cancel")
+				if(n==1)
+				{
+					params["global_sel"]=sel2
+					params["local"]=0
+				}
+				else if (n!=2)
+				{
+					return
+				}
+			}
+			else
+			{
+				params["global_sel"]=sel2
+				params["local"]=0
+			}
+		}
+
+	}
+	
+	# find information
+	langArray=mk_output_langArray("global_sel" in params)
+	mk_insert_flag()
+	params["base"]=mk_get_possible_relative_path()
+	res=mk_process_all_interesting_line(langArray,params)
+	if("terminate" in res) return
+	params["relax"]=1
+	res=mk_process_all_interesting_line(langArray,params)
+	if("terminate" in res) return
+	params["relax"]=0
+	params["first"]=0
+	params["other"]=1
+	res=mk_process_all_interesting_line(langArray,params)
+	if("terminate" in res) return
+	params["relax"]=1
+	res=mk_process_all_interesting_line(langArray,params)
+}
+
+
+
+
+#trying to find an interesting line to match
+#$1=0 -> search in $mk_goto_path
+#$1=1 -> search in recursive sub directory
+define mk_process_all_interesting_line
+{
+	langArray=$1
+	params=$2
+	
+	allready_done=$empty_array
+	for (i in langArray)
+	{
+		lang=langArray[i]
+		if(!(lang in $mk_goto_lines_lang_map)) continue
+		
+		for(key in $mk_goto_lines_lang_map[lang])
+		{
+			langKey=$mk_goto_lines_lang_map[lang][key]
+			if(langKey in allready_done) continue
+			allready_done[langKey]=1
+			if(!(params["first"])) continue
+			
+			line=mk_check_regex(langKey,params)
+			if(line=="") continue
+			
+			res=mk_process_one_interesting_line(line, langKey, params)
+			if(res["terminate"]) return res
+		}
+	}
+	
+	if(params["other"]==0) return $empty_array
+	
+	for(langKey in $mk_goto_lines)
+	{
+		if(langKey in allready_done) continue
+		line=mk_check_regex(langKey,params)
+		if(line=="") continue
+		
+		res=mk_process_one_interesting_line(line, langKey, params)
+		if(res["terminate"]) return res
+	}
+	return $empty_array
+}
+
+
+
+
+# process one intersting line
+define mk_process_one_interesting_line
+{
+	interestingLine=$1
+	key=$2
+	params=$3
+	
+	tmp_res=$empty_array
+	tmp_res["str"]=interestingLine
+	tmp_res["key"]=key
+	tmp_res["base"]=$3["base"]
+	tmp_res["terminate"]=0
+	
+	if(!(key in $mk_goto_lines)) 
+	{
+		dialog("Warning: "key" is not in $mk_goto_lines")
+		return tmp_res
+	}
+	lookfor=$mk_goto_lines[key]
+	n = search_string(interestingLine,lookfor,0,"regex")
+	if(n==-1) return null_res
+	if((n!=0) || ($search_end != length(interestingLine)))
+	{
+		return tmp_res
+	}
+	
+	errMess=""
+	ref_regex="\\(\\(\\?#(\\w+):(.*?)\\)"
+	n=search_string(lookfor,ref_regex,0,"regex")
+	end=$search_end
+	while (n!=-1)
+	{
+		sub=substring(lookfor,n,end)
+		refName=replace_in_string(sub,ref_regex,"\\1","regex")
+		ref=mk_ref_number(lookfor,refName)
+		if("error" in ref)
+		{
+			errMess=errMess"\n"ref["error"]
+		}
+		else
+		{
+			value=replace_in_string(interestingLine,lookfor,"\\" ref["index"],"regex")
+			tmp_res[refName]=value
+			if("param" in ref) tmp_res[refName"Ext"]=ref["param"]
+		}
+		n=search_string(lookfor,ref_regex,end,"regex")
+		end=$search_end
+	}
+	
+	if(errMess!="")
+	{
+		message="macro-kit WARNING:\n"errMess"\nin interesting line: "key
+		dialog(message,"Let's see in macro_parameters...")
+	}
+	if(!("fileExt" in tmp_res)) tmp_res["fileExt"]=""
+	
+	res=mk_linejump_process(tmp_res,params)
+	
+	return res
+}
+
+
+
+
+# goto file and line
+define mk_lj_open_file
+{
+	if(!("file" in $1)) return ""
+	
+	filename=mk_lookfor_file($1,$2)
+	if(!("no-mime" in $1))
+	{
+		ext=mk_extract_extension(filename)
+		if (ext in $mk_goto_lines_mime)
+		{
+			mk_no_return_shell_command($mk_goto_lines_mime[ext] " " filename)
+			return filename
+		}
+	}
+		
+	if(filename!="")
+	{
+		file=mk_open_file(filename)
+		if((file!="") && ("pos" in $1))
+		{
+			mk_goto_location($1["pos"])
+		}
+		return file
+	}
+	else
+	{
+		return ""
+	}
+}
+
+# highlight interesting line
+define mk_highlight_lines
+{
+	priomax=0
+	if($n_args>0) priomax=$1
+	
+	filename=$file_path $file_name
+	if(filename in $mk_range_save)
+	{
+		for(i in $mk_range_save[filename])
+		{
+			rangeset_destroy($mk_range_save[filename][i]["id"])
+		}
+		delete $mk_range_save[filename]
+	}
+	else
+	{
+		array=$empty_array
+		mk_build_search_lines(priomax)
+		if($mk_search_lines=="") return
+		i=0
+		n=search($mk_search_lines,0,"regex")
+		end=$search_end
+		while ((n!=-1) && (n<end))
+		{
+			r=rangeset_create()
+			if(r==0) break
+			rangeset_set_color(r, $mk_range_color)
+			array[i]=$empty_array
+			array[i]["beg"]=n
+			array[i]["end"]=end
+			array[i]["id"]=r
+			rangeset_add( r, n, end )
+			i++
+			n=search($mk_search_lines,end,"regex")
+			end=$search_end
+		}
+		
+		$mk_range_save[filename]=array
+	}
+}
+
+
+# set new priority
+define mk_new_priority
+{
+	str="Actual priority is " $mk_il_priority "\nEnter new priority (between 0 and 9):"
+	i=string_dialog(str,"Ok","Cancel")
+	if((i!="") && ($string_dialog_button==1))
+	{
+		$mk_il_priority=i
+	}
+}
+
+# find an interesting line
+# arg1 -> backward or forward
+define mk_find_error
+{
+	sens=$1
+	priomax=$mk_il_priority
+	cursor=$cursor
+	mk_build_search_lines(priomax)
+	
+	save_cursor_pos =$cursor
+	
+	if($selection_start==-1)
+	{
+		if (sens=="backward")
+		{
+			set_cursor_pos(end_of_line_pos())
+		}
+		else
+		{
+			set_cursor_pos(beg_of_line_pos())
+		}
+	}
+
+	find($mk_search_lines,"regex",sens)
+	if($selection_start==-1)
+	{
+		set_cursor_pos(cursor)
+	}
+}
+
+# get language to use
+define mk_output_langArray
+{
+	extsel=0
+	if($n_args>0) extsel=$1
+	count=0
+	delete $mk_uva[]
+	inf=mk_get_buffer_info()
+	
+	if("reallang" in inf)
+	{
+		if(mk_uva_insert(inf["reallang"],count)) count++
+	}
+	if("lang" in inf)
+	{
+		if(mk_uva_insert(inf["lang"],count)) count++
+	}
+	if(inf[]==0)
+	{
+		if(mk_uva_insert($language_mode,count)) count++
+	}
+	
+	
+	return $mk_uva
+}
+
+
+define mk_get_possible_relative_path
+{
+	# find relative array
+	relative_path=$empty_array
+	bufferInfo=mk_get_buffer_info()
+	if(bufferInfo[]>0)
+	{
+		buffer_local_path=""
+		if("local" in bufferInfo) buffer_local_path=bufferInfo["local"]
+		buffer_main_path=bufferInfo["path"]
+		if( buffer_main_path != buffer_local_path )
+		{
+			relative_path[0]=$empty_array
+			relative_path[0]["path"]=buffer_local_path
+			relative_path[0]["list"]="."
+			
+			relative_path[1]=$empty_array
+			relative_path[1]["path"]=buffer_main_path
+			relative_path[1]["list"]="."
+		}
+		else
+		{
+			relative_path[0]=$empty_array
+			relative_path[0]["path"]=buffer_main_path
+			relative_path[0]["list"]="."
+		}
+	}
+	else
+	{
+		action_path=mk_action_path()
+		file_path=$file_path
+		if(( $file_path != "" ) && (action_path!=$file_path))
+		{
+			relative_path[0]=$empty_array
+			relative_path[0]["path"]=$file_path
+			relative_path[0]["list"]="."
+			
+			relative_path[1]=$empty_array
+			relative_path[1]["path"]=action_path
+			relative_path[1]["list"]="."
+		}
+		else
+		{
+			relative_path[0]=$empty_array
+			relative_path[0]["path"]=action_path
+			relative_path[0]["list"]="."
+		}
+	}
+	return relative_path
+}
+
+define mk_lookfor_file
+{
+	info=$1
+	params=$2
+	
+	# test local
+	if(substring(info["file"],0,1)=="/")
+	{
+		tmp=mk_test_file(info["file"])
+		if(tmp!="") return tmp
+	}
+	
+	# relative path
+	len=info["base"][]
+	for(i=0;i<len;i++)
+	{
+		list=info["base"][i]["list"]
+		rel=info["base"][i]["path"]
+		file=mk_search_file( info["file"] , list ,rel)
+		if(file!="")
+		{
+			tmp=mk_test_file(file)
+			if(tmp!="") return tmp
+		}
+	}
+	
+	for(i=0;i<len;i++)
+	{
+		# try to find something in the sub-directory
+		if(params["rec"])
+		{
+			rel=info["base"][i]["path"]
+			file = mk_rec_find_file(info["file"],rel,3)
+			if(file!="") return file
+		}
+	}
+	
+	# no match
+	return ""
+}
+
+
+
+
+define mk_check_regex
+{
+	key=$1
+	params=$2
+
+	str=""
+	if ("local_sel" in params)
+	{
+		if ($selection_start==-1)
+		{
+			str=params["local_sel"]
+		}
+		else
+		{
+			if ((params["cursor"]>=$selection_start) && (params["cursor"]<=$selection_end))
+			{
+				str=params["local_sel"]
+			}
+		}
+	}
+	else if ("global_sel" in params)
+	{
+		str=params["global_sel"]
+	}
+	
+	# try with some predefine string
+	if (str!="")
+	{
+		if(!(key in $mk_goto_lines)) 
+		{
+			dialog("Warning: "key" is not in $mk_goto_lines")
+			return ""
+		}
+		lookfor=$mk_goto_lines[key]
+		n = search_string(str,lookfor,0, "regex")
+		if(n!=-1)
+		{
+			if((n!=0) || ($search_end != length(str)))
+			{
+				if(params["relax"])
+				{
+					return substring(str,n,$search_end)
+				}
+			}
+			else
+			{
+				return str
+			}
+		}
+	}
+	
+	# if local search is allowed
+	if(params["local"])
+	{
+		if(!(key in $mk_goto_lines)) 
+		{
+			dialog("Warning: "key" is not in $mk_goto_lines")
+			return ""
+		}
+		lookfor=$mk_goto_lines[key]
+		n = search(lookfor,params["cursor"], "regex", "backward")
+		if(n==-1) return ""
+		if((n<=params["cursor"]) && ($search_end >= params["cursor"]))
+		{
+			if(params["auto_select"])
+			{
+				select(n,$search_end)
+				return get_range(n,$search_end)
+			}
+			else if($selection_start==-1)
+			{
+				return ""
+			}
+			else if((n!=$selection_start) || ($search_end != $selection_end))
+			{
+				if(params["relax"])
+				{
+					return get_range(n,$search_end)
+				}
+				else
+				{
+					return ""
+				}
+				
+			}
+			else
+			{
+				return get_range(n,$search_end)
+			}
+		}
+		else
+		{
+			return ""
+		}
+	}
+	
+	return ""
+}
+
+
+
+# return the regex which is use to look for new interesting line
+define mk_build_search_lines
+{
+	priormin=$1
+	all=0
+	if(($n_args>1) && ($2=="all"))
+	{
+		all=1
+	}
+	$mk_search_lines=""
+	or=""
+	
+	langArray=mk_output_langArray()
+#	dialog(mk_unsplit(langArray))
+	
+	if (all)
+	{
+		for(gtkey in $mk_goto_lines)
+		{
+			inf=mk_keylang_info(gtkey)
+			if(inf["prio"]>=priormin)
+			{
+				line=$mk_goto_lines[gtkey]
+				$mk_search_lines= $mk_search_lines or "(?:"line")"
+				or="|"
+			}
+		}
+	}
+	else
+	{
+		for (i in langArray)
+		{
+			lang=langArray[i]
+			if(lang in $mk_goto_lines_lang_map)
+			{
+				for(key in $mk_goto_lines_lang_map[lang])
+				{
+					gtkey=$mk_goto_lines_lang_map[lang][key]
+					inf=mk_keylang_info(gtkey)
+					if(inf["prio"]>=priormin)
+					{
+						line=$mk_goto_lines[gtkey]
+						$mk_search_lines= $mk_search_lines or "(?:"line")"
+						or="|"
+					}
+				}
+			}
+		}
+	}
+}
+
+
+define mk_goto_next_interesting_line
+{
+	if(focus_window($mk_nil_document_name)=="") return
+	mk_find_error("forward")
+	mk_goto_error()
+}
+
+define mk_init_line_jumping
+{
+	$mk_range_save=$empty_array
+	$mk_search_lines=""
+	$mk_nil_document_name=""
+}
+
+mk_init_line_jumping()

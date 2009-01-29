@@ -1,0 +1,160 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: very miscellaneous macros              #
+##################################################
+
+######################################3
+# line CUT PASTE COPY
+
+
+
+#Add structural character (like () [] {})
+define mk_add_structure
+{
+	save_cursor_pos=$cursor
+	
+	if ($selection_start==-1)
+	{
+		replace_range($cursor,$cursor,$1 $2)
+		set_cursor_pos(save_cursor_pos+length($1))
+		return
+	}			
+	
+	save_beg_sel=$selection_start
+	save_end_sel=$selection_end
+	
+	# Count the number of lines in the selection
+	nLines = 0
+	for (i=$selection_start; i<$selection_end; i++)
+    	if (get_character(i) == "\n")
+        	nLines++
+
+	# Create the fill text
+	rectangular = ($selection_left != -1)
+	line = ""
+	fillText = ""
+	if (rectangular)
+	{
+		save_left_sel=$selection_left
+		save_rigth_sel=$selection_right
+		
+		str_sel=get_selection()
+		str=""
+		old=0
+		n=search_string(str_sel,"\n",0,"regex")
+		while (n!=-1)
+		{
+			fillText= fillText $1 substring(str_sel,old,n) $2 "\n"
+			old=n+1
+			n=search_string(str_sel,"\n",n+1,"regex")
+		}
+		fillText= fillText $1 substring(str_sel,old,length(str_sel)) $2
+		replace_selection(fillText)
+		tmp = length($1)+length($2)
+#		select_rectangle(save_beg_sel,save_end_sel+nLines*tmp,save_left_sel,save_rigth_sel+tmp)
+		set_cursor_pos(save_end_sel)
+		tmpEnd=save_rigth_sel+nLines
+		goto_line_number("c"tmpEnd)
+		
+	}
+	else
+	{
+		fillText = $1 get_selection() $2
+		replace_selection(fillText)
+#		select(save_beg_sel,save_beg_sel+length(fillText))
+		set_cursor_pos(save_beg_sel+length(fillText))
+	}
+}
+
+# Replace the selection by the clipboard
+define mk_replace_selection
+{
+	if($selection_start!=-1)
+	{
+		replace(get_selection(),clipboard_to_string(),"literal","case")
+	}
+}
+
+
+# save all
+define mk_save_all
+{
+	filename=focus_window("last")
+	if(!mk_is_untitled()) save()
+	while (focus_window("next")!="")
+	{
+		if(!mk_is_untitled()) save()
+	}
+}
+
+
+# replace all line of a rectangular by the same string
+define mk_replace_in_rectangular_selection
+{
+	if($selection_left != -1)
+	{
+		start=$selection_start
+		end= $selection_end
+		left= $selection_left
+		right= $selection_right
+		
+		insert_str=string_dialog("String to insert:","ok","dismiss")
+		if($string_dialog_button==1)
+		{
+			select_rectangle( start, end, left, right ) 
+			# Count the number of lines in the selection
+			sel_str=get_selection()
+			sel_str=replace_in_string(sel_str,"^.*$",insert_str,"regex")
+			
+			# Replace the selection with the fill text
+			replace_selection(sel_str)
+		}
+	}
+}
+
+# enumerate the line of the selection
+define mk_enumeration
+{
+	count=1
+	add_str=$1
+
+	if ($selection_start != -1)
+	{
+		tmp=get_selection()
+		
+		index=0
+		while( index != -1 )
+		{
+			tmp=substring(tmp,0,index) count add_str substring(tmp,index,length(tmp))
+			index=search_string(tmp,"^",index+length(index add_str),"regex")
+			count=count+1
+		}
+	}
+	
+	replace_selection(tmp)
+}
+
+define mk_macro_kit_help
+{
+	infFile=read_file($MK_ENV_VAR["NEDIT_MK"] "/macro/info.txt")
+	str="NEdit Macro-Kit\n"
+	str=str "http://www.assembla.com/wiki/show/nedit-macro-kit\n"
+	str=str "Send bug at frank.perbet@laposte.net"
+	str=str "including the following information:\n"
+	str=str infFile
+	str=str "\n\n"
+	str=str "Some macro menu are useful to debug:\n"
+	str=str "- Macro>Misc (Mk)> show environament variable\n"
+	str=str "- Macro>Misc (Mk)> Check shell command\n"
+	string_to_clipboard(str)
+	dialog(str,"Ok")
+}
+
+define mk_init_misc
+{
+	# nothing
+}
+
+
+
+mk_init_misc()

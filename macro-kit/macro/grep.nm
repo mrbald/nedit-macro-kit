@@ -1,0 +1,477 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: grep interface                         #
+##################################################
+
+
+# change the selected regex line It's a bit like "replace_all"
+# return:
+#    0 -> stop
+#    1 -> continue
+define mk_replace_one_grep_line
+{
+	info=$mk_grep_line[$3]
+	filename=replace_in_string($1,info["re"],"\\" info["file"],"regex")
+	pos=replace_in_string($1,info["re"],"\\" info["pos"],"regex")
+	line=replace_in_string($1,info["re"],"\\" info["result"],"regex")
+	absFileName=mk_filename(filename,$2)
+	
+	if( (filename=="") || (pos==""))
+	{
+		if($1!="")
+		{
+			$mk_grep_ignored_lines=$mk_grep_ignored_lines "\n" $1
+		}
+		return 1
+	}
+	
+	mk_open_file_in_group(absFileName,$mk_grep_group_file_name)
+	
+	if(focus_window(absFileName)=="")
+	{
+		n=dialog("Can't open file "filename\
+			"\n.Continue anyway?","yes","no")
+		if(n==1) return 1
+		else return 0
+	}
+	else
+	{
+		if($mk_grep_group_file_name=="")
+		{
+			$mk_grep_group_file_name=absFileName
+		}
+	}
+	
+	if(!(filename in $rgrep_stat))
+	{
+		$rgrep_stat[filename]=$empty_array
+		$rgrep_stat[filename]["count"]=0
+		$rgrep_stat[filename]["diff"]=0
+	}
+	
+	if(!mk_goto_location(pos,$rgrep_stat[filename]["diff"]))
+	{
+		add=filename":"pos":\n BUG: IGNORED\n"
+		$mk_grep_modified_lines = $mk_grep_modified_lines add
+		return 1
+	}
+	current_line=get_selection()
+	
+	lnew=length(line)
+	lcurrent=length(current_line)
+	if($3=="grep.py")
+	{
+		line=substring(line,0,lnew-1)
+		line=replace_in_string(line,"^\t","","regex")
+		lnew=length(line)
+	}
+	else if($3=="grep")
+	{
+		if(substring(line,lnew-1,lnew)!="\n")
+		{
+			lnew++
+			line=line"\n"
+		}
+		# tricky stuff to get rid of new line exception
+		if(substring(current_line,lcurrent-1,lcurrent)!="\n")
+		{
+			lnew--
+			line=substring(line,0,lnew)
+		}
+	}
+	
+	if (current_line==line) return 1
+
+	if(($rgrep_stat[filename]["count"]==0) && $modified )
+	{
+		n=dialog("Warning, this file " filename " was not saved. The grep replacements can be wrong.","Stop!!","Ignore (dangerous!!)")
+		if(n!=2)
+		{
+			return 0
+		}
+	}
+
+	replace_selection(line)
+	$rgrep_stat[filename]["diff"]+=lnew-lcurrent
+	
+	add=filename":"pos":\n" current_line "\n  ->\n" line "\n" "\n"
+	$mk_grep_modified_lines = $mk_grep_modified_lines add
+	$rgrep_stat[filename]["count"]++
+	return 1
+}
+
+
+# change all the selected regex lines. It's a bit like "replace_all"
+define mk_replace_grep_line
+{
+	list=mk_buffer_selection()
+	if(list=="") return
+	
+	buffName=mk_currentBuffName()
+	if(buffName=="")
+	{
+		dialog("This file is not a mkBuffer file.","Cancel")
+		return
+	}
+	
+	path=mk_buffer_path()
+
+	if(path=="")
+	{
+		path=mk_action_path()
+		mess ="Can't find the path: this file is not a Macro-Kit buffer file.\n"
+		mess = mess "Do you wan't to operate the grep-replacement in:\n"
+		mess = mess path
+		n=dialog(mess,"Ok","Cancel")
+		if(n!=1) return
+	}
+	
+	last_char=substring(list,length(list)-1,length(list))
+	if(search_string(last_char,"\n",0,"regex")==-1) list=list "\n"
+	
+	answer=dialog("Warning: These operations are difficult to undo.","replace all","dismiss")
+	if(answer!=1) return
+
+	$rgrep_stat=$empty_array
+	$mk_grep_ignored_lines=""
+	$mk_grep_modified_lines=""
+	
+	type=""
+	beg=0
+	end=0
+	for (i in $mk_grep_line)
+	{
+		beg=search_string(list,$mk_grep_line[i]["re"],0,"regex")
+		if(beg==0)
+		{
+			end=$search_end
+			type=i
+			break
+		}
+	}
+	if(type=="")
+	{
+		dialog("Error: unrecognized line.")
+		return
+	}
+	
+	$mk_grep_group_file_name=""
+	while (beg!=-1)
+	{
+		elem = substring(list, beg, end)
+		if(!mk_replace_one_grep_line(elem,path,type)) break
+		
+		beg=search_string(list,$mk_grep_line[i]["re"],end,"regex")
+		if((beg!=-1) && (beg!=end))
+		{
+			dialog("Error at position "end)
+			return
+		}
+		end=$search_end
+	}
+	
+	#stat:
+	stat=""
+	for (k in $rgrep_stat) stat=stat k ": " $rgrep_stat[k]["count"] " modif.\n"
+	if(stat=="") stat= "MODIFICATIONS:\nNo modification done.\n"
+	else stat= "MODIFICATIONS:\n" stat
+
+	#records
+	records=""
+	if($mk_grep_modified_lines!="")
+		records = "REPLACEMENTS:\n" $mk_grep_modified_lines
+
+	#ignored lines
+	ignored_line=""
+	if($mk_grep_ignored_lines!="")
+		ignored_line="IGNORED LINES:" $mk_grep_ignored_lines "\n"
+
+
+	mk_buffer_add_string(buffName,stat records ignored_line $mk_buffer_end "\n")
+}
+
+#set regex parameters
+define mk_set_grep_parameter
+{
+	str=string_dialog("mask:\nNow:   " $mk_grep_mask["default"] ,"Ok","Next")
+	
+	if ($string_dialog_button==1)
+	{
+		if(str=="")
+		{
+			$mk_grep_mask["default"]="-name \\*"
+		}
+		else
+		{
+			$mk_grep_mask["default"]=str
+		}
+	}
+	else
+	{
+		return
+	}
+	
+	str=string_dialog("grep param:\nNow:   " $mk_grep_param["grep"] ,"Ok","Next")
+	if ($string_dialog_button==0) return
+	
+	if (($string_dialog_button==1) && (str!=""))
+	{
+		$mk_grep_param["grep"]=str
+	}
+
+	str=string_dialog("find param:\nNow:   " $mk_grep_param["find"] ,"Ok","Next")
+	if ($string_dialog_button==0) return
+	
+	if (($string_dialog_button==1) && (str!=""))
+	{
+		$mk_grep_param["find"]=str
+	}
+}
+
+
+# launch grep
+define mk_grep_output
+{
+	# transform string
+	str=$1
+	mask=$2
+	regex=$3
+	lang=$4
+	path=$5
+	
+	grep_cmd=$mk_uc["grep"] " " $mk_grep_param["grep"]
+	if($mk_grep_param["grep.py"]!="")
+	{
+		grep_cmd=$mk_grep_py
+		if(!regex)
+		{
+			grep_cmd=grep_cmd " -b '.*'"
+			if(substring(str,length(str),length(str)-1)!="\n")
+			{
+				grep_cmd=grep_cmd " -a '.*'"
+			}
+		}
+	}
+	
+#	str=replace_in_string(str,"\\\\","\\\\\\\\","regex","copy")
+	str=replace_in_string(str,"\n","\\\\n","regex","copy")
+	str=replace_in_string(str,"\t","\\\\t","regex","copy")
+	str=mk_ssc(str)
+	
+	if($mk_grep_param["icase"])
+	{
+		grep_cmd=grep_cmd " -i"
+	}
+	if(regex) grep_cmd=grep_cmd " -E"
+	else grep_cmd=grep_cmd " -F"
+	
+	
+	# now, process the string $mk_grep_mask["default"] to make it usable
+	mask=" \\( " mask " \\) "
+	
+	is_a_file = " \\( -type f -o -type s \\) "
+	findparam= " \\( " is_a_file "  -a  " mask " \\)"
+	command = $mk_uc["find"] " . " $mk_grep_param["find"] " " findparam " -exec " grep_cmd " " str " {} \\;"
+	
+	mk_execute_in_buffer(command,path,"local","Grep["lang"]")
+}
+
+# get language to use
+define mk_grep_language
+{
+	count=0
+	delete $mk_uva[]
+	
+	if($language_mode=="Mk Output")
+	{
+		inf=mk_get_buffer_info()
+		if("lang" in inf)
+		{
+			if((inf["lang"]=="Grep") && ("lang param" in inf))
+			{
+				if(mk_uva_insert(inf["lang param"],count)) count++
+			}
+			else
+			{
+				if(mk_uva_insert(inf["lang"],count)) count++
+			}
+		}
+		return $mk_uva
+	}
+	
+	prj=mk_find_project(mk_action_path())
+	if("LANG" in prj)
+	{
+		if(mk_uva_insert(prj["LANG"],count)) count++
+	}
+	
+	if(mk_uva_insert($language_mode,count)) count++
+	
+	if(mk_uva_insert("Current file",count)) count++
+	
+	ext=mk_extract_extension($file_name)
+	if(ext!="")
+	{
+		if(mk_uva_insert("."ext,count)) count++
+	}
+	
+	if(mk_uva_insert("Default mask",count)) count++
+
+	return $mk_uva
+}
+
+
+# Look for a sentence (selected or given)
+# It use grep with regex or not
+define mk_grep_dialog
+{
+	regex=0
+	if(($n_args>0) && ($1=="regex")) regex=1
+	mask="-true"
+	path=mk_action_path()
+	
+	lanarray=mk_grep_language()
+	
+	str=get_selection()
+	
+	if(str!="")
+	{
+		lang=lanarray[0]
+		if(lang in $mk_grep_mask)
+		{
+			mask=$mk_grep_mask[lang]
+		}
+	}
+	else
+	{
+		mess="Path="path"\n"
+		if(regex) mess=mess"Looking for (regular expression):"
+		else mess=mess"Looking for:"
+		
+		len=lanarray[]
+		if(len==1)
+		{
+			str=string_dialog(mess, lanarray[0], "Cancel")
+		}
+		else if(len==2)
+		{
+			str=string_dialog(mess, lanarray[0], lanarray[1], "Cancel")
+		}
+		else if(len==3)
+		{
+			str=string_dialog(mess, lanarray[0], lanarray[1], lanarray[2], "Cancel")
+		}
+		else if(len==4)
+		{
+			str=string_dialog(mess, lanarray[0], lanarray[1], lanarray[2], lanarray[3], "Cancel")
+		}
+		else if(len==5)
+		{
+			str=string_dialog(mess, lanarray[0], lanarray[1], lanarray[2], lanarray[3], lanarray[4], "Cancel")
+		}
+		else
+		{
+			dialog("mk_grep_dialog bug")
+		}
+		
+		if((str=="") || ($string_dialog_button==(len+1)))
+		{
+			return
+		}
+		tmp_mask=lanarray[$string_dialog_button-1]
+		
+		if(substring(tmp_mask,0,1)==".")
+		{
+			lang=$language_mode
+			mask="-iname \\*" tmp_mask
+		}
+		else if(tmp_mask=="Default mask")
+		{
+			lang=$language_mode
+			mask=$mk_grep_mask["default"]
+		}
+		else if(tmp_mask=="Current file")
+		{
+			lang=$language_mode
+			if(mk_is_untitled())
+			{
+				dialog("Impossible to run grep on the current Untitled document.")
+				return
+			}
+			path=$file_path
+			mask="-maxdepth 1 -name " mk_ssc($file_name)
+		}
+		else
+		{
+			if(tmp_mask in $mk_grep_mask)
+			{
+				mask=$mk_grep_mask[tmp_mask]
+				lang=tmp_mask
+			}
+			else
+			{
+				mask=$mk_grep_mask["default"]
+				lang=tmp_mask
+			}
+		}
+	}
+	
+	mk_grep_output(str,mask,regex,lang,path)
+}
+
+# find a file with the shell command find
+define mk_find_file
+{
+	path=mk_action_path()
+	if($n_args>=2) path=$2
+	if($n_args>=1) mask=$1
+	else
+	{
+		mask=string_dialog("Recursive search in " path "\nEnter mask:","ok","dismiss")
+		if( ($string_dialog_button!=1) || (mask=="")) return 
+	}
+	cmd=$mk_uc["find"] " . | "$mk_uc["grep"] " -E \'" mask "\'"
+	mk_execute_in_buffer(cmd,path,"local","Files")
+}
+
+#init
+define mk_grep_init
+{
+	$mk_grep_group_file_name=""
+	$mk_grep_py=$MK_ENV_VAR["NEDIT_MK"]"/macro/grep.py"
+	$mk_grep_line=$empty_array
+	if("Grep:std" in $mk_goto_lines)
+	{
+		$mk_grep_line["grep"] = $empty_array
+		$mk_grep_line["grep"]["re"] = $mk_goto_lines["Grep:std"]
+	}
+	if("Grep:py" in $mk_goto_lines)
+	{
+		$mk_grep_line["grep.py"] = $empty_array
+		$mk_grep_line["grep.py"]["re"] = $mk_goto_lines["Grep:py"]
+	}
+	
+	if($mk_grep_line[]!=2)
+	{
+		$mk_grep_line=$empty_array
+		mk_add_error_line("Error in grep.nm:  grep lines doesn't exist in $mk_goto_lines")		
+	}
+	
+	for(i in $mk_grep_line)
+	{
+		#give_ref_number is define in nedit_output.nm
+		res=mk_ref_number($mk_grep_line[i]["re"],"pos")
+		$mk_grep_line[i]["pos"]=res["index"]
+		res=mk_ref_number($mk_grep_line[i]["re"],"file")
+		$mk_grep_line[i]["file"]=res["index"]
+		res=mk_ref_number($mk_grep_line[i]["re"],"result")
+		$mk_grep_line[i]["result"]=res["index"]
+
+		if(($mk_grep_line[i]["pos"]==-1) || ($mk_grep_line[i]["file"]==-1) || ($mk_grep_line[i]["result"]==-1))
+		{
+			mk_add_error_line("Error in grep.nm: can't find references in " $mk_grep_line)
+		}
+	}
+}
+
+mk_grep_init()

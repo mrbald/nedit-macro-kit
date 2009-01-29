@@ -1,0 +1,9 @@
+insert
+iterator
+const_iterator
+pop_back
+push_back
+push_front
+reserve
+clear
+splice

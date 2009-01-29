@@ -1,0 +1,157 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: stuff from www.nedit.org               #
+##################################################
+
+
+
+# take into account the end of the current text
+define end_of_line_pos
+{
+	pos=search("$",$cursor,"regex","forward")
+	if (pos==-1)
+		return $text_length
+	else
+		return pos
+}
+
+# beg_of_line_pos
+define beg_of_line_pos
+{
+	return search("^",$cursor,"regex","backward")
+}
+
+# select line
+define select_line
+{
+	from=$cursor
+	beg=search("^",from,"regex","backward")
+	if(beg==-1) return
+	end=search("$",beg,"regex","forward")
+	if(end==-1) end = $text_length
+
+	select(beg,end)
+	set_cursor_pos(end)
+}
+define next_win
+{
+   n=focus_window("next")
+   if(n!="") open(n)
+   else open(focus_window("last"))
+}
+
+define prev_win
+{
+# needs functions first_win_name and prev_win_name (below)
+   n=prev_win_name()
+   if(n!="") open(n)
+   else open(first_win_name())
+}
+
+define first_win_name 
+{
+   wa=$file_path $file_name
+   wn=focus_window("next")
+   while(wn!="")
+	 {
+      wa=wn
+      wn=focus_window("next")
+   }
+   return wa
+}
+
+define prev_win_name
+{
+   a=$file_path $file_name
+   f=focus_window("last")
+   l=f
+   while(f!="")
+	 {
+      f=focus_window("next")
+      if(f==a) break
+      else if (f!="")l=f
+   }
+   return l
+}
+
+define next_win_name
+{
+	res=focus_window("next")
+	if(res=="")
+	{
+		return focus_window("last")
+	}
+	else
+	{
+		return res
+	}
+}
+
+# fill the selection with the given string
+define fill_selection
+{
+	# Ask the user what character to fill with
+	fillChar = string_dialog("Fill selection with what character?", "OK", "Cancel")
+	if ($string_dialog_button != 1)
+    	return
+
+	# Count the number of lines in the selection
+	nLines = 0
+	for (i=$selection_start; i<$selection_end; i++)
+    	if (get_character(i) == "\n")
+        	nLines++
+
+	# Create the fill text
+	rectangular = $selection_left != -1
+	line = ""
+	fillText = ""
+	if (rectangular) {
+    	for (i=0; i<$selection_right-$selection_left; i++)
+        	line = line fillChar
+    	for (i=0; i<nLines; i++)
+        	fillText = fillText line "\n"
+    	fillText = fillText line
+	} else {
+    	if (nLines == 0) {
+        	for (i=$selection_start; i<$selection_end; i++)
+            	fillText = fillText fillChar
+    	} else {
+        	startIndent = 0
+        	for (i=$selection_start-1; i>=0 && get_character(i)!="\n"; i--)
+            	startIndent++
+        	for (i=0; i<$wrap_margin-startIndent; i++)
+            	fillText = fillText fillChar
+        	fillText = fillText "\n"
+        	for (i=0; i<$wrap_margin; i++)
+            	line = line fillChar
+        	for (i=0; i<nLines-1; i++)
+            	fillText = fillText line "\n"
+        	for (i=$selection_end-1; i>=$selection_start && get_character(i)!="\n"; \
+            	i--)
+        	fillText = fillText fillChar
+    	}
+	}
+
+	# Replace the selection with the fill text
+	replace_selection(fillText)
+}
+
+# copy selected line
+define copy_line
+{
+	goto_line_number($line)
+	string_to_clipboard(get_selection())
+}
+
+# cut selected line
+define cut_line
+{
+	goto_line_number($line)
+	cut_clipboard()
+}
+
+# paste clipboard
+define paste_line
+{
+	paste_clipboard()
+}

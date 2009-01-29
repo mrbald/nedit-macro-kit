@@ -1,0 +1,164 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: load the first vital stuffs            #
+##################################################
+
+
+
+###################################################################
+#####                                                     #########
+#####                 Error and debug function            #########
+#####                                                     #########
+###################################################################
+
+
+
+# add an error line
+define mk_add_error_line
+{
+	$mk_error_count++
+	$mk_error_lines= $mk_error_lines $mk_error_count ") " $1 "\n"
+}
+
+# Check if there has been some error while loading macros
+define mk_check_error
+{
+	if($mk_error_lines!="")
+	{
+		tmp=dialog($mk_error_lines,"continue","exit")
+		if(tmp==2) exit()
+	}	
+}
+
+
+
+
+
+
+###################################################################
+#####                                                     #########
+#####                            init function            #########
+#####                                                     #########
+###################################################################
+
+
+# initialisation of $mk_init_path
+define mk_init_action_path
+{
+	$mk_init_path=""
+	if($file_path!="")
+	{
+		$mk_init_path = $file_path
+	}
+	else
+	{
+		res=shell_command("pwd","")
+		start=search_string(res,"^.+$\n", length(res), "regex","backward")
+		if ( (start==-1) || ($search_end!=length(res)))
+		{
+			$mk_init_path=$MK_ENV_VAR["HOME"]
+			mk_add_error_line("Can't init the working path.")
+		}
+		$mk_init_path = substring(res,start,length(res)-1)
+	}
+	
+	# eventually add /
+	len = length($mk_init_path)
+	if(substring($mk_init_path,len-1,len)!="/")
+	{
+		$mk_init_path = $mk_init_path "/"
+	}
+	
+	# empty init:
+	$mk_pri_action_path=""
+	$mk_action_path_list=""
+}
+
+# initialisation of $mk_pri_action_host
+define mk_init_action_host
+{
+	$mk_pri_action_host=$MK_ENV_VAR["HOST"]
+}
+
+# initialisation of $MK_ENV_VAR["SHELL"]
+define mk_init_shell
+{
+	$MK_ENV_VAR["SHELL"]=getenv("SHELL")
+	if($MK_ENV_VAR["SHELL"]!="") return
+	$MK_ENV_VAR["SHELL"]=shell_command("echo $0","")
+	if($MK_ENV_VAR["SHELL"]!="") return
+	#using csh:
+	mk_add_error_line("Can't init $MK_ENV_VAR[\"SHELL\"] variable")
+}
+
+#test wheter .cshrc contains echo command or not
+define mk_shell_output_test
+{
+	tmp=shell_command("echo","")
+	tmp=substring(tmp,0,length(tmp)-1)
+	if(tmp!="")
+	{
+		mk_add_error_line("If you want the nedit macros to work correctly,\nyou must suppress the following text\nwhich appears while executing a shell:\n" tmp)
+	}
+	return tmp
+}
+
+# init everything
+define mk_first_init
+{
+	$mk_error_lines=""
+	$mk_error_count=0
+	mk_init_action_path()
+	mk_init_action_host()
+	mk_init_shell()
+	mk_shell_output_test()
+	
+	$mk_buffer_name_begin="zzz_output_"
+	$mk_engine_name_begin="zzz_engine_"
+	
+	$mk_nedit_output_lang="Mk Output"
+}
+
+
+mk_first_init()
+
+
+
+
+###############################################33
+
+define mk_keylang_info
+{
+	regex="([^:]*):([^:]+)(?::([0-9]))?"
+	res=$empty_array
+	res["lang"]=replace_in_string($1,regex,"\\1","regex")
+	res["name"]=replace_in_string($1,regex,"\\2","regex")
+	res["prio"]=replace_in_string($1,regex,"\\3","regex")
+	if(res["prio"]=="") res["prio"]=9
+#	dialog(mk_unsplit(res,"nice"),$1)
+	return res
+}
+
+define mk_init_goto_line
+{
+	$mk_goto_lines_lang_map=$empty_array
+	
+	regex="(.*):(.+)(?::([0-9]+))"
+	for (key in $mk_goto_lines)
+	{
+		inf=mk_keylang_info(key)
+		if(inf["lang"]!="")
+		{
+			if(inf["lang"] in $mk_goto_lines_lang_map)
+			{
+				i=$mk_goto_lines_lang_map[inf["lang"]][]
+				$mk_goto_lines_lang_map[inf["lang"]][i]= key
+			}
+			else
+			{
+				$mk_goto_lines_lang_map[inf["lang"]]=$empty_array
+				$mk_goto_lines_lang_map[inf["lang"]][0]=key
+			}
+		}
+	}
+}

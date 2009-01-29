@@ -1,0 +1,92 @@
+################################
+#  Frank Perbet 2002/04/14     #
+#   load macro files           #
+################################
+
+##################################
+# init
+
+# standard nedit macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "www_nedit.nm")
+
+# main init
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "init.nm")
+
+
+
+##################################
+# customize
+
+# global variables
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "macro_parameters.nm")
+
+# project macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "line_jumping_parameters.nm")
+
+
+##################################
+# useful for everybody
+
+# unix operation
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "unix.nm")
+
+# miscellanous
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "util.nm")
+
+# unix operation
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "work_settings.nm")
+
+
+
+##################################
+# misc
+
+# ctags stuff
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "ctags.nm")
+
+# dicoi stuff
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "dico.nm")
+
+# advanced completion macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "completion.nm")
+
+# project macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "line_jumping.nm")
+
+# advanced comment macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "comment.nm")
+
+# c++ specific macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "cpp.nm")
+
+# expander macro
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "expander.nm")
+
+# very miscellanous
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "move.nm")
+
+# very miscellanous
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "misc.nm")
+
+# source control
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "sourcecontrol.nm")
+
+
+
+##################################
+#buffer stuff:
+
+# use of .nedit_output file
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "buffer.nm")
+
+# use of .nedit_output file
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "execution_in_buffer.nm")
+
+# interactive "grep" with nedit
+load_macro_file($MK_ENV_VAR["MACRO_DIR"] "grep.nm")
+
+
+# error line feed back
+mk_check_error()
+
+

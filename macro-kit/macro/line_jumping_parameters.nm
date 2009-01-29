@@ -1,0 +1,424 @@
+##################################################
+# Frank Perbet - 2004/03/30                      #
+# object: customize jump to interesting line     #
+##################################################
+
+
+
+##################################################################
+# interesting lines.
+# key regex: language[param]:name:priority
+# External means that the language is automatically generated (like compiler output)
+# priority is used to select the line used when using F1 (find_error)
+# when the priorit if lower than $mk_il_priority, the line is ignored
+# during the search (but can still be selected and processed)
+
+$mk_il_priority=5
+
+$mk_goto_lines=$empty_array
+
+# cg:
+$mk_goto_lines["C++:cgdoc"] = "^((?#file:.html)cg\\S+)"
+
+# cg:
+$mk_goto_lines["cg:error"] = "^((?#file:)\\S+)\\(((?#pos:)[0-9]+)\\).*$\n?"
+
+# CC:
+$mk_goto_lines["External[C++]:CC warning:1"] = "^cc-[0-9]+ (?:(?:CC)|(?:cc)): (?:(?:WARNING)|(?:REMARK)) File = ((?#file:include)\\S+), Line = ((?#pos:)[0-9]+)$\n?"
+
+# CC:
+$mk_goto_lines["External[C++]:CC error"] = "^cc-[0-9]+ (?:(?:CC)|(?:cc)): (?:ERROR) File = ((?#file:include)\\S+), Line = ((?#pos:)[0-9]+)$\n?"
+
+# g++:
+$mk_goto_lines["External[C++]:g++ warning:1"] = "^((?#file:include)\\S+?):((?#pos:)[0-9]+): .*$\n?"
+
+# g++:
+$mk_goto_lines["External[C++]:g++ error"] = "^((?#file:include)\\S+?):((?#pos:)[0-9]+): (?!warning:).*$\n?"
+
+# include
+$mk_goto_lines["C++:include"] = "^\\s*#\\s*include\\s*[<\"]\\s*((?#file:include)[^>\"]+)\\s*[>\"].*$\n?"
+
+# grep
+$mk_goto_lines["Grep:std"] = "^((?#file:)[^:]+?):((?#pos:)[0-9]+):((?#result:).*)$\n?"
+
+# grep
+$mk_goto_lines["Grep:py"] = "^((?#file:)\\S+?):((?#pos:)\\([0-9]+,[0-9]+\\)):\n((?#result:)^(?:\t.*\n)+)"
+
+# file + line
+$mk_goto_lines[":file url"] = "file://((?#file:)\\S+)"
+
+# file + line
+$mk_goto_lines[":www url"] = "(?:http:/\\S+)|(?:www[-.]\\S+)"
+
+# file + line
+$mk_goto_lines[":file+line"] = "^((?#file:)\\S+?)\\s*:\\s*((?#pos:)[0-9]+).*$\n?"
+
+# human ctags
+$mk_goto_lines[":ctags"] = "^((?#tag:)\\w.+)((?#space:) +)(?:((?#type:)\\w+) +)?((?#line:)[0-9]+) +((?#file:)\\S+) +((?#misc:).+)$"
+
+# assert sgi:
+$mk_goto_lines["External:cvs failed"] = "^.*Up-to-date check failed for .*$\n?"
+
+# assert sgi:
+$mk_goto_lines["External:assert CC"] = "^Assertion failed: .*, file ((?#file:).*), line ((?#pos:)[0-9]+).*$\n?"
+
+# assert linux
+$mk_goto_lines["External:assert gcc"] = "^(?:.+?): ((?#file:).*):((?#pos:)[0-9]+): (?:.*): (?#error:)Assertion (?:.*) failed\.$\n?"
+
+# assert sh
+$mk_goto_lines["External:assert sh"] = "^((?#file:)\\S+): line ((?#pos:)[0-9]+):(?:.*)$\n?"
+
+# latex input
+$mk_goto_lines["LaTeX:package:0"] = "^\\\\(?:usepackage)\\{((?#file:.sty).*)\\}\\s*$\n?"
+
+# latex input
+$mk_goto_lines["LaTeX:class:0"] = "^\\\\(?:documentclass)\\{((?#file:.cls).*)\\}\\s*$\n?"
+
+# latex input
+$mk_goto_lines["LaTeX:include:9"] = "\\\\(?:(?:include)|(?:input))\\{((?#file:.tex).*?)\\}"
+
+# latex input
+$mk_goto_lines["LaTeX:figfile:0"] = "^\\\\(?:figfile)\\{((?#file:.fig).*)\\}\\s*$\n?"
+
+# latex input
+$mk_goto_lines["LaTeX:bib:0"] = "^\\\\\(?:bibliography)\\{((?#file:.bib).*)\\}\\s*$\n?"
+
+# latex warning
+$mk_goto_lines["External[LaTeX]:warning:1"] = "((?#file:texerr))^LaTeX Warning: (?:.+?) on input line ((?#pos:)(?:[0-9])+)\.$\n?"
+
+# latex input
+$mk_goto_lines["External[LaTeX]:error"] = "((?#file:texerr))^! .*(?:.*\n)*?l\\.((?#pos:)[0-9]+).*$\n"
+
+# latex input
+$mk_goto_lines["External[LaTeX]:error2"] = "^((?#file:)\\S+?)\\s*:\\s*((?#pos:)[0-9]+).*$\n?"
+
+# latex warning
+$mk_goto_lines["External[LaTeX]:bibtex error"] = "^.*---line ((?#pos:)[0-9]+) of file ((?#file:)\\S+)$\n?"
+
+# doxygen
+$mk_goto_lines["External[Doxygen]:error"] = "^Definition at line ((?#pos:)[0-9]+) of file ((?#file:)\\S+). $\n?"
+
+# source ...
+$mk_goto_lines["Csh:source"] = "^\\s*source\\s+\"?((?#file:env)\\S+?)\"?\\s*$\n?"
+
+# include file (with environement variable)
+$mk_goto_lines["NEdit Macro:loadmacro"] = "^load_macro_file\\(((?#file:).+?)\\)\\s*$\n?"
+
+# include project file
+$mk_goto_lines["Makefile:qtPro"] = "^\\s*include(?:\\(| +)\\s*((?#file:env)\\S+?)\\s*(?:\\)|\\s|$)\\s*$\n?"
+
+# include file (with environement variable)
+$mk_goto_lines["Makefile:subproject"] = "^((?#file:pro)\\S+?)$\n?"
+
+# include file (with environement variable)
+#$mk_goto_lines["mp3:location"] = "^(?:((?#pos:mp3DB)\\S+)\\.mp3DB:)?((?#file:).+\\.mp3)$\n?"
+$mk_goto_lines["mp3:location"] = "^(?:(?:\\S.*.mp3)$\n)+?"
+
+# python import
+$mk_goto_lines["Python:import"] = "^import\\s*((?#file:python)\\S+)\\s*$\n?"
+
+# python from
+$mk_goto_lines["Python:from"] = "^from\\s*((?#file:python)\\S+)\\s*import.*$\n?"
+
+# assert python
+$mk_goto_lines["External[Python]:assert"] = "^\\s*File \"((?#file:python).*)\", line ((?#pos:)[0-9]+).*$\n(?:.*)\n(?:\\l+)Error: .*"
+
+# assert python
+$mk_goto_lines["External[Python]:assert:1"] = "^\\s*File \"((?#file:python).*)\", line ((?#pos:)[0-9]+).*$\n?"
+
+# include file
+$mk_goto_lines[":oneFile"] = "^((?#file:)\\S+?)$\n?"
+
+# include file (with environement variable)
+$mk_goto_lines[":envFile"] = "^((?#file:env)\\S+?)$\n?"
+
+# python from
+$mk_goto_lines["SGML HTML:ref"] = "(?ihref)=\"((?#file:env).+?)\""
+
+# python from
+$mk_goto_lines["Java:import"] = "^import\\s+((?#file:).*?)\\s*;\\s*$\n?"
+
+# python from
+$mk_goto_lines["txtPerso:ddd"] = "\\*ddd:((?#action:).*?)\\*"
+
+# python from
+$mk_goto_lines["XML:match"] = "\\<((?#end:)/)?((?#id:)\\l[0-9a-zA-Z_-]*?)(?:\\s+.*?)?\\>"
+
+
+# init
+mk_init_goto_line()
+
+
+###########################################################################
+# various
+
+$mk_range_color="#eeaaaa"
+$mk_cpp_include_path="/usr/include /usr/local/include /usr/X11R6/include/ /usr/include/c++/3.* /usr/lib/gcc-lib/i586-mandrake-linux-gnu/3.*/include/"
+
+
+$mk_web_browser="konqueror"
+#special extension (work only for "oneFile")
+$mk_goto_lines_mime=$empty_array
+$mk_goto_lines_mime["fig"]="xfig"
+$mk_goto_lines_mime["dvi"]="xdvi"
+$mk_goto_lines_mime["ps"]=$mk_web_browser
+$mk_goto_lines_mime["pdf"]=$mk_web_browser
+$mk_goto_lines_mime["jpg"]="qiv"
+$mk_goto_lines_mime["gif"]="qiv"
+$mk_goto_lines_mime["png"]="qiv"
+
+# java doc
+$mk_java_doc=$empty_array
+$mk_java_doc[0]="~/extdata/doc/java-doc/api/"
+$mk_java_doc[1]="~/extdata/doc/java-doc-ext/j3dapi/"
+$mk_java_doc[2]="~/extdata/doc/java-doc-ext/j3dutil/"
+
+###########################################################################
+#                                                                         #
+#                  Line jumping functions                                 #
+#                                                                         #
+###########################################################################
+
+
+# preprocess
+define mk_linejump_preprocess
+{
+	local_param=$1
+	global_param=$2
+	
+	# file preprocessing
+	if(local_param["fileExt"]=="env")
+	{
+		local_param["file"]=mk_replace_env(local_param["file"])
+	}
+	else if(substring(local_param["fileExt"],0,1)==".")
+	{
+		if(search_string(local_param["file"],",",0)==-1)
+		{
+			local_param["file"]=local_param["file"] local_param["fileExt"]
+		}
+		else
+		{
+			tmp=replace_in_string(local_param["file"],",","\n","copy")
+			tmp=list_dialog("Choose:",tmp,"Ok","Cancel")
+			if($list_dialog_button==1)
+			{
+				local_param["file"]=tmp local_param["fileExt"]
+			}
+			else
+			{
+				return local_param
+			}
+		}
+	}
+	else if(local_param["fileExt"]=="python")
+	{
+		add=getenv("PYTHON_ROOT")"/python"getenv("PYTHON_VERSION") " " getenv("PYTHONPATH") " "
+		if((local_param["key"]=="Python:from") || (local_param["key"]=="Python:import"))
+		{
+			n=search_string(local_param["file"],"(\\w+)$",0,"regex")
+			if(n==0) basePath=""
+			else
+			{
+				basePath=substring(local_param["file"],0,n)
+				basePath=replace_in_string(basePath,".","/")
+			}
+			local_param["file"]= substring(local_param["file"],n,length(local_param["file"]))".py"
+			add=replace_in_string(add," +","/"basePath" ","regex")
+		}
+		for(relative in local_param["base"])
+		{
+			local_param["base"][relative]["list"]= local_param["base"][relative]["list"] " " add
+		}
+	}
+	else if(local_param["fileExt"]=="texerr")
+	{
+		n=search("\\(.*\\.(?:tex)",$cursor,"regex","backward")
+		if(n==-1)
+		{
+			return local_param
+		}
+		local_param["file"]=get_range(n+1,$search_end)
+	}
+	
+	return local_param
+}
+
+
+
+
+# process
+define mk_linejump_process
+{
+	global_param=$2
+	local_param=mk_linejump_preprocess($1,$2)
+	
+#	dialog(mk_unsplit(global_param,"key"),"global_param")
+#	dialog(mk_unsplit(local_param,"key"),"local_param")
+#	dialog(local_param["file"])
+	
+	
+	# process
+	if(local_param["key"]=="LaTeX:input:1")
+	{
+		if(mk_extract_extension(local_param["file"])=="pstex_t")
+		{
+			local_param["file"]=mk_extract_basename(local_param["file"])".fig"
+		}
+		if(global_param["special"])
+		{
+			local_param["no-mime"]=1
+		}
+	}
+	else if(local_param["key"]=="C++:include")
+	{
+		for(relative in local_param["base"])
+		{
+			includepath = mk_include_path(local_param["base"][relative]["path"])
+			local_param["base"][relative]["list"] = local_param["base"][relative]["list"] " " includepath " " $mk_cpp_include_path
+		}
+	}
+	else if(local_param["key"]=="mp3:location")
+	{
+		if(global_param["special"])
+		{
+			mp3_copy()
+		}
+		else
+		{
+			mp3_copy("play")
+		}
+		local_param["terminate"]=1
+		return local_param
+	}
+	else if(local_param["key"]==":www url")
+	{
+		mk_no_return_shell_command("konqueror " local_param["str"])
+		return local_param
+	}
+	else if(local_param["key"]=="NEdit Macro:loadmacro")
+	{
+		local_param["file"]=mk_interpret("return " local_param["file"])
+	}
+	else if(local_param["key"]=="Makefile:subproject")
+	{
+		local_param["file"]=local_param["file"]"/"local_param["file"]".pro"
+	}
+	else if(local_param["key"]=="Java:import")
+	{
+		mk_open_java_doc(local_param["file"])
+		local_param["terminate"]=1
+		return local_param
+	}
+	else if(local_param["key"]=="C++:cgdoc")
+	{
+		filename=mk_search_file(local_param["file"], "./html ./cgGL/html","~/extdata/doc/Cg/docs/runtime/")
+		mk_no_return_shell_command($mk_web_browser " " filename)
+		local_param["terminate"]=1
+		return local_param
+	}
+	else if(local_param["key"]=="txtPerso:ddd")
+	{
+		ddd_action(local_param["action"])
+		local_param["terminate"]=1
+		return local_param
+	}
+	else if(local_param["key"]=="XML:match")
+	{
+		if (local_param["end"]=="")
+		{
+			start=$selection_start
+			n=search("\\</" local_param["id"] "\\>", start, "forward", "regex")
+			end=$search_end
+			select(start,end)
+			set_cursor_pos(end)
+		}
+		else
+		{
+			end=$selection_end
+			start=search("\\<" local_param["id"] "(\\s+.*?)?\\>", end, "backward", "regex")
+			select(start,end)
+			set_cursor_pos(start)
+		}
+		local_param["terminate"]=1
+		return local_param
+	}
+	
+	filename=mk_lj_open_file(local_param,global_param)
+	if(filename!="")
+	{
+		local_param["terminate"]=1
+	}
+	return local_param
+}
+
+
+
+###########################################################################
+###########################################################################
+###########################################################################
+# user function
+
+define mk_open_java_doc
+{
+	path=replace_in_string($1,".","/","copy")
+	l=length(path)
+	if(substring(path,l-2,l)=="/*")
+	{
+		path=substring(path,0,l-2)
+	}
+	else
+	{
+		path=path".html"
+	}
+	
+	for(i in $mk_java_doc)
+	{
+		filename=mk_filename(path,$mk_java_doc[i])
+		if(mk_test_file_or_path(filename)!="")
+		{
+			mk_no_return_shell_command("konqueror " filename)
+		}
+	}
+
+}
+
+define mk_replace_env
+{
+	filename=$1
+	
+	#with parenthesis
+	regex="\\$\\((\\l\\w*)\\)"
+	n=search_string(filename,regex,0,"regex")
+	while (n!=-1)
+	{
+		envName=substring(filename,n+2,$search_end-1)
+		envVar=getenv(envName)
+		if(envVar=="") return filename
+		filename=substring(filename,0,n) envVar substring(filename,$search_end,length(filename))
+		n=search_string(filename,regex,n+length(envName),"regex")
+	}
+
+	#without parenthesis
+	regex="\\$(\\l\\w*)"
+	n=search_string(filename,regex,0,"regex")
+	while (n!=-1)
+	{
+		envName=substring(filename,n+1,$search_end)
+		envVar=getenv(envName)
+		if(envVar=="") return filename
+		filename=substring(filename,0,n) envVar substring(filename,$search_end,length(filename))
+		n=search_string(filename,regex,n+length(envName),"regex")
+	}
+	
+	return filename
+}
+
+
+# end of user function
+###########################################################################
+###########################################################################
+###########################################################################
+
+
+

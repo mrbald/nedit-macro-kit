@@ -1,0 +1,3 @@
+NAME=mk_macro
+LANG=NEdit Macro
+MAIN=load_all_macros.nm

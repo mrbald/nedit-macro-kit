@@ -1,0 +1,499 @@
+##################################################
+# Frank Perbet - 2002/08/14                      #
+# object: work setting (path and host)           #
+##################################################
+
+
+
+#reload macro_parameters.nm
+define mk_reload_macros_parameters_file
+{
+	load_macro_file(mk_filename("./macro_parameters.nm",$MK_ENV_VAR["MACRO_DIR"]))
+	dialog("Macros parameters loaded")
+}
+
+# open macro_parameters.nm
+define mk_open_macros_parameters_file
+{
+	mk_insert_flag()
+	mk_open_file(mk_filename("./macro_parameters.nm",$MK_ENV_VAR["MACRO_DIR"] ))
+}
+
+# set action host
+define mk_set_host
+{
+	$mk_pri_action_host=$1
+	if (search_string($mk_host_list,"<"$mk_pri_action_host">",0,"regex")==-1)
+	{
+		$mk_host_list=$mk_host_list "\n" $mk_pri_action_host
+	}
+}
+
+# set action host
+define mk_set_local_host
+{
+	$mk_pri_action_host=$MK_ENV_VAR["HOST"]
+}
+
+# get th current host
+define mk_action_host
+{
+	return $mk_pri_action_host
+}
+
+
+#set the local host
+define set_local_host
+{
+	tmp=$mk_pri_action_host
+	mk_set_host($MK_ENV_VAR["HOST"])
+	dialog("The host was: " tmp "\nNow: " mk_action_host(),"ok")
+}
+
+# Choice of the host you want to use
+define mk_set_host_dialog
+{
+	what_host_aux=string_dialog("What host do you want to us (now: " $mk_pri_action_host ")?\n        Use \"local\" for local host.","ok","dismiss")
+	if ( ($string_dialog_button==1) && (what_host_aux!=""))
+	{
+		if (what_host_aux=="local")
+			what_host_aux=$MK_ENV_VAR["HOST"]
+		
+		mk_set_host(what_host_aux)
+		return mk_action_host()
+	}
+	else
+	{
+		return ""
+	}	
+}
+
+# Choice of the host you want to use in a list
+# the list is defined in macro_parameters.nm
+define mk_set_host_list
+{
+	what_host_aux=list_dialog("Choose the host you want to use (now: " $mk_pri_action_host "):",$mk_host_list,"ok","local: "$MK_ENV_VAR["HOST"],"dismiss")
+	
+	if ( ($list_dialog_button==1) && (what_host_aux!=""))
+	{
+		mk_set_host(what_host_aux)
+	}
+	else
+	{
+		return ""
+	}
+}
+
+
+
+
+
+#####################################3
+# path stuff
+
+# return compil_path
+define mk_action_path
+{
+	if(mk_is_buffer_file())
+	{
+		path=mk_buffer_path()
+		if(path!="")
+		{
+			return path
+		}
+	}
+	if($mk_action_path_mode==0)
+	{
+		res=$file_path
+	}
+
+	if($mk_action_path_mode==1)
+	{
+		res=$mk_pri_action_path
+	}
+
+	if($mk_action_path_mode==2)
+	{
+		res=mk_multi_action_path($file_path)
+		if((res=="") && ($file_path!=""))
+		{
+			res=$file_path
+		}
+	}
+		
+	if(res=="")
+	{
+		res=$mk_init_path
+	}
+
+	$mk_pri_action_path=res
+#	return mk_ssc($mk_pri_action_path)
+	return $mk_pri_action_path
+}
+
+# return the local path of the window
+
+define path_list_dialog
+{
+	if($mk_action_path_list=="")
+	{
+		list=""
+		n=search_string(list,"^"mk_literal($file_path)"/*$",0,"regex")
+		if(($file_path!="") && (n==-1)) list=list "\n" $file_path
+		n=search_string(list,"^"mk_literal($mk_init_path)"/*$",0,"regex")
+		if(($mk_init_path!="") && (n==-1)) list=list "\n" $mk_init_path
+		list=list "\n~"
+		
+		list=replace_in_string(list,"\n+","\n","regex","copy")
+		
+		str=list_dialog("No global path. Do you want to use:",list,"Ok","Cancel")
+		if(($list_dialog_button==1) && (str!=""))
+		{
+			mk_add_action_path(str)
+			path_list_dialog()
+		}
+		return
+	}
+	
+	message="Action path list:\n(current: " mk_action_path() ")"
+	list=$mk_action_path_list
+#	str=list_dialog(message, list,"open","close all","add local","remove","edit","cancel")
+	path=list_dialog(message, list,"edit","add local","remove","open","close all","cancel")
+	
+	#edit
+	if($list_dialog_button==1)
+	{
+		if(path=="") return
+		mess="Editing directory:\n" path "\n\n" mk_unsplit(mk_find_project(path), "nice") 
+		inf=mk_find_project(path)
+		res=string_dialog(mess,"set dir","set lang","set main","cancel")
+		if(res!="")
+		{
+			if($string_dialog_button==1)
+			{
+				mk_sub_action_path(path)
+				newpath=mk_pathname(res,path)
+				mk_add_action_path(newpath)
+			}
+			else if ($string_dialog_button==2)
+			{
+				$mk_wd_lang[path]=res
+			}
+			else if ($string_dialog_button==3)
+			{
+				$mk_wd_main[path]=res
+			}
+		}
+		path_list_dialog()
+	}
+	# add local
+	else if($list_dialog_button==2)
+	{
+		mk_add_action_path($file_path)
+		path_list_dialog()
+	}
+	#remove
+	else if($list_dialog_button==3)
+	{
+		if(path=="") return
+		mk_sub_action_path(path)
+	}
+	#open
+	else if($list_dialog_button==4)
+	{
+		if(path=="") return
+		list=mk_allready_open(path".*",2)
+		if(list=="")
+		{
+			dialog("No file opened in: " path,"cancel")
+			return
+		}
+		filename=list_dialog("Choose a file:",list,"open","cancel")
+		if(($list_dialog_button==1) && (filename!=""))
+		{
+			res=focus_window(filename)
+			if(res!="")
+			{
+				raise_window()
+			}
+		}
+	}
+	#close all
+	else if($list_dialog_button==5)
+	{
+		if(path=="") return
+		mk_sub_action_path(path)
+		list = mk_allready_open(path".*",2)
+		array=split(list,"\n","regex")
+		for(i in array)
+		{
+			res=focus_window(array[i])
+			if(res!="")
+			{
+				close()
+			}
+		}
+	}
+	else
+	{
+		return
+	}
+}
+
+#Choice of the directory you want to use
+define mk_set_path_dialog
+{
+	tmp_action_path = mk_action_path()
+	if(tmp_action_path=="") return
+	
+	if($mk_action_path_mode==0)
+	{
+		dialog("You can't set a global path work if you are in local path mode.\nUse Ctrl+Alt+S to switch to global path mode.")
+		return
+	}
+
+	if($mk_action_path_mode==1)
+	{
+		compil_path_aux=string_dialog("Choose directory?\n(now: " tmp_action_path ")","ok","local","dismiss")
+
+		if(($string_dialog_button==1) && (compil_path_aux!=""))
+		{
+			compil_path_aux=mk_pathname(compil_path_aux,tmp_action_path)
+			if (mk_test_path(compil_path_aux)=="")
+			{
+				dialog(compil_path_aux " is not a valid directory")
+				return
+			}
+			$mk_pri_action_path=compil_path_aux
+			dialog("New path is: " $mk_pri_action_path)
+		}
+		else if($string_dialog_button==2)
+		{
+			compil_path_aux=mk_test_path($file_path)
+
+			if (compil_path_aux=="")
+			{
+				dialog(compil_path_aux " is not a valid directory")
+				return
+			}
+			$mk_pri_action_path=compil_path_aux
+			dialog("New path is: " $mk_pri_action_path)
+		}
+	}
+	
+	if($mk_action_path_mode==2)
+	{
+		path_list_dialog()
+	}
+
+}
+
+# set the mk_action_path() to $file_path
+define mk_set_local_path
+{
+	if($mk_action_path_mode==0)
+	{
+		dialog("You can't set a global path work if you are in local path mode.\nUse Ctrl+Alt+S to switch to global path mode.")
+		return
+	}
+	
+	path=$file_path
+	if(path=="") path = $mk_init_path
+	if($mk_action_path_mode==1)
+	{
+		tmp=mk_action_path()
+		$mk_pri_action_path=path
+		dialog("The compilation path was:\n   " tmp "\nNow:\n   " path,"ok")
+	}
+
+	if($mk_action_path_mode==2)
+	{
+		mk_add_action_path(path)
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# use local/global working directory
+define mk_action_path_mode
+{
+	message="Choose action path mode (currently "$mk_action_path_mode"):"
+	list="0 -> local path\n" "1 -> global path\n" "2 -> multi-global path\n"
+	str=list_dialog(message,list,"ok","cancel")
+	if(($list_dialog_button!=2) && (str!=""))
+	{
+		num=replace_in_string(str,"^([0-9])(.*)$","\\1","regex")
+		$mk_action_path_mode=num
+	}
+}
+
+
+
+# go to a file of the current action path
+define mk_goto_action_path
+{
+	if($1=="") return
+	str=mk_literal($1)
+	list=mk_allready_open(str,2)
+	if(list!="")
+	{
+		filename=mk_first_line(list)
+		res=mk_open_file(filename)
+	}
+	else
+	{
+		list=mk_allready_open(str".*",2)
+		filename=mk_first_line(list)
+		mk_open_file(filename)
+	}
+}
+
+# add a file to the action path list
+define mk_add_action_path
+{
+	path=mk_pathname($1)
+	if(path=="") return
+	n =search_string($mk_action_path_list,"^"mk_literal(path)"$",0,"regex")
+	if(n==-1)
+	{
+		if($mk_action_path_list=="") $mk_action_path_list = path
+		else $mk_action_path_list=$mk_action_path_list "\n" path  
+	}
+}
+
+# remove a file to the action path list
+define mk_sub_action_path
+{
+	if($1=="") return
+	regex="\n?^"mk_literal($1)"$"
+	n =search_string($mk_action_path_list,regex,0,"regex")
+	if(n!=-1)
+	{
+		$mk_action_path_list = replace_in_string($mk_action_path_list, regex,"","regex")
+	}
+}
+
+# find the action pat of the current file in multi-path mode
+define mk_multi_action_path
+{
+	if($1=="") return ""
+	
+	res=""
+	l=0
+	list=$mk_action_path_list
+	array=split(list,"\n","regex")
+	for (i in array)
+	{
+		n=search_string($1,array[i],0,"literal")
+		if(n!=-1)
+		{
+			if(length(array[i])>l)
+			{
+				l=length(array[i])
+				res= array[i]
+			}
+		}
+	}
+	return res
+}
+
+#goto next action path
+define mk_next_action_path
+{
+	if($mk_action_path_mode!=2) return
+	if($mk_action_path_list=="") return
+	
+	ac = mk_action_path()
+	n = search_string($mk_action_path_list,"^"mk_literal(ac)"$",0,"regex")
+	end=$search_end
+	if(n==-1)
+	{
+		n = search_string($mk_action_path_list,"^.*$",0,"regex")
+		if(n==-1)
+		{
+			dialog("mk_next_action_path: bug")
+			return
+		}
+		mk_goto_action_path(substring($mk_action_path_list,n,$search_end))
+	}
+	else
+	{
+		n = search_string($mk_action_path_list,"^.*$",end,"regex")
+		if(n==-1)
+		{
+			n = search_string($mk_action_path_list,"^.*$",0,"regex")
+		}
+		if(n==-1)
+		{
+			dialog("mk_next_action_path: bug")
+			return
+		}
+		mk_goto_action_path(substring($mk_action_path_list,n,$search_end))
+	}
+}
+
+#goto previous action path
+define mk_prev_action_path
+{
+	if($mk_action_path_mode!=2) return
+	if($mk_action_path_list=="") return
+	
+	ac = mk_action_path()
+	n = search_string($mk_action_path_list,"^"mk_literal(ac)"$",0,"regex")
+	end=$search_end
+	# current exist
+	if(n==-1)
+	{
+		n = search_string($mk_action_path_list,"^.*$",0,"regex")
+		newActionPath=substring($mk_action_path_list,n,$search_end)
+		if(n==-1)
+		{
+			dialog("mk_next_action_path: bug1")
+			return
+		}
+		mk_goto_action_path(mk_next_action_path)
+	}
+	else
+	{
+		n = search_string($mk_action_path_list,"^.*$",n-1,"regex","backward")
+		if(n==-1)
+		{
+			n = search_string($mk_action_path_list,"^.*$",length($mk_action_path_list),"regex","backward")
+		}
+		newActionPath=substring($mk_action_path_list,n,$search_end)
+		if(n==-1)
+		{
+			dialog("mk_next_action_path: bug2")
+			return
+		}
+		mk_goto_action_path(newActionPath)
+	}
+}
+
+
+
+define mk_init_work_setting
+{
+	if($mk_pri_action_host=="")
+	{
+		mk_add_error_line("Warning: work_settings.nm: $mk_pri_action_host empty")
+	}
+	$mk_wd_main=$empty_array
+	$mk_wd_lang=$empty_array
+}
+
+mk_init_work_setting()

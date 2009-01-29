@@ -1,0 +1,328 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: comment stuff                          #
+##################################################
+
+
+# comment the selection with the single comment $1
+define mk_comment_single_comment
+{
+	if($selection_start==-1) return
+	
+	if($2==1)
+	{
+		#comment after all the non-visible character
+		replace_in_selection("^(\\s*)(\\S.*)$", "\\1" $1 "\\2", "regex")	
+	}
+	else if($2==2)
+	{
+		tab=mk_tab()
+		n=search("^(?:" tab ")*",$selection_start,"regex")
+		if( (n==-1) || (n>=$selection_end) )
+		{
+			mk_comment_single_comment($1,0)
+		}
+		else
+		{
+			nb_tab=$search_end-n
+	  	regex=""
+			if($em_tab_dist!=-1)
+			{
+				nb_tab=nb_tab/$em_tab_dist
+			}
+			if(nb_tab>0)
+			{
+				regex="(?:" tab "){" nb_tab "," nb_tab "}|(?:\\s*)"
+			}
+			replace_in_selection("^(" regex ")(.*)$", "\\1" $1 "\\2", "regex")
+		}
+	}
+	else
+	{
+		#comment at the begin of the line
+		replace_in_selection("^(.*)$", $1 "\\1", "regex")			
+	}
+	
+}
+
+# uncomment the selection with a single comment $1
+define mk_uncomment_single_comment
+{
+	if($selection_start==-1) return
+	
+	#comment after all the non-visible character
+	tmp=replace_in_string($1,".","[&]","regex")
+	replace_in_selection("^(\\s*)" tmp "(.*)$", "\\1\\2", "regex")
+}
+
+# comment the selection with the double comment $1 and $2
+define mk_comment_double_comment
+{
+	if($selection_start==-1) return
+	
+	tmp=get_selection()
+	start=$selection_start
+	end=$selection_end
+	
+	n1=search_string(tmp,"[^\\s]",0,"regex")
+	n2=search_string(tmp,"[^\\s]",length(tmp),"regex","backward")
+
+	replace_range(start,end,$1 tmp $2)
+	select(start,end+length($1)+length($2))
+}
+
+# uncomment the selection with the double comment $1 and $2
+define mk_uncomment_double_comment
+{
+	if($selection_start==-1) return
+	
+	tmp=get_selection()
+	start=$selection_start
+	end=$selection_end
+	
+	n1=search_string(tmp,"[^\\s]",0,"regex")
+	n2=search_string(tmp,"[^\\s]",length(tmp),"regex","backward")
+
+   	if (( substring(tmp,n1,n1+length($1))==$1 ) && (substring(tmp,n2-length($2)+1,n2+1)==$2))
+   	{
+		replace_range(start,end,substring(tmp,0,n1) substring(tmp,n1+length($1),n2-length($2)+1) substring(tmp,n2+1,length(tmp)))
+		select(start,end-length($1)-length($2))
+	}	
+}
+
+# swap comment for single comment
+# example:
+#   process_single_comment("//")	-> add comment //
+#   process_single_comment("//")	again -> remove comment //
+define mk_swap_single_comment
+{
+
+	tmp=get_selection()
+	n1=search_string(tmp,"[^\\s]",0,"regex")
+	
+	if( substring(tmp,n1,n1+length($1))==$1)
+	{
+		#comment after all the non-visible character
+		mk_uncomment_single_comment($1)
+	}
+	else
+	{
+		mk_comment_single_comment($1,$mk_comment_mode)
+	}
+}
+
+# swap comment for double comment
+# example:
+#	process_single_comment("/*","*/")	-> add comment /* ... */
+#	process_single_comment("/*","*/")	again -> remove comment /* ... */
+define mk_swap_double_comment
+{
+	if($selection_start==-1)
+	{
+		beg=search("^",$cursor,"regex","backward")
+		end=search("$",beg,"regex","forward")
+		if (end==-1) end=$text_length
+		select(beg,end)
+	}
+	
+	tmp=get_selection()
+	n1=search_string(tmp,"[^\\s]",0,"regex")
+	n2=search_string(tmp,"[^\\s]",length(tmp),"regex","backward")
+
+   	if (( substring(tmp,n1,n1+length($1))==$1 ) && (substring(tmp,n2-length($2)+1,n2+1)==$2))
+   	{
+		mk_uncomment_double_comment($1,$2)
+	}
+	else
+	{
+		mk_comment_double_comment($1,$2)
+	}
+}
+
+#auto comment
+define mk_comment
+{
+	if($selection_start==-1) select_line()
+	
+	if(search_string($1,"...",0,"case")==-1)
+	{
+		mk_comment_single_comment($1,$mk_comment_mode)
+	}
+	else
+	{
+		c1=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\1","regex")
+		c2=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\2","regex")
+		mk_comment_double_comment(c1,c2)
+	}
+}
+
+#auto uncomment
+define mk_uncomment
+{
+	if($selection_start==-1) select_line()
+	
+	if(search_string($1,"...",0,"case")==-1)
+	{
+		mk_uncomment_single_comment($1)
+	}
+	else
+	{
+		c1=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\1","regex")
+		c2=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\2","regex")
+		mk_uncomment_double_comment(c1,c2)
+	}
+	
+}
+
+# choose between process_double_comment ans process_single_comment
+# single comment are like: # or //
+# double comment are like: /* ...*/
+# the syntax of double comment is like: "/* ...*/"
+# example: process_comment("/*...*/") will call
+# process_double_comment("/*","*/")
+define mk_process_comment
+{
+	if($selection_start==-1) select_line()
+	
+	if(search_string($1,"...",0,"case")==-1)
+	{
+		mk_swap_single_comment($1)
+	}
+	else
+	{
+		c1=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\1","regex")
+		c2=replace_in_string($1,"([^.]+)[.][.][.]([^.]+)","\\2","regex")
+		mk_swap_double_comment(c1,c2)
+	}
+}
+
+# find the good comment (depend on the language)
+define mk_find_comment
+{
+	if($n_args==0) num=1
+	else num=$1
+	
+	if((num==1) || (num==2))
+	{
+		if($language_mode in $mk_comment)
+		{
+			special_comment = $mk_comment[$language_mode]
+		}
+		else
+		{
+			special_comment = $mk_comment["default"]
+		}
+		special_comment = replace_in_string(special_comment,"^(.*?)(?:,(.*))?$","\\"num,"regex")
+		return special_comment
+	}
+	else
+	{
+		dialog("wrong arguments for mk_find_comment")
+		return
+	}
+}
+
+# swap between comment and uncomment
+define mk_swap_comment
+{
+	tmp=mk_find_comment($1)
+	if(tmp!="")
+	{
+		mk_process_comment(tmp)
+	}
+}
+
+# if no args, find the length of the longest line
+define mk_nice_line_comment
+{
+	if($n_args==1) num_char=$1
+	else num_char=-1
+	
+	if($selection_start==-1) select_line()
+	beg=search("^",$selection_start,"regex","backward")
+	end=search("$",$selection_end,"regex")
+	if(end==-1) end=$text_length
+	str=get_range(beg,end)
+	
+	if(num_char==-1)
+	{
+		tmp_beg=search_string(str,"^.*$",0,"regex")
+		tmp_end=$search_end
+		while (tmp_beg!=-1)
+		{
+			if(tmp_beg!=tmp_end)
+			{
+				tmp_str=substring(str,tmp_beg,tmp_end)
+				num_tab=length(replace_in_string(tmp_str,"[^\t]","","regex"))
+				line_length=tmp_end-tmp_beg+num_tab*($tab_dist-1)
+				if(num_char<line_length) num_char=line_length
+			}
+			else
+			{
+				tmp_end+=1
+			}
+			tmp_beg=search_string(str,"^.*$",tmp_end,"regex")
+			tmp_end=$search_end
+		}		
+	}
+
+	
+	nice_line=mk_motif_string("*",num_char)
+	str= nice_line "\n" str "\n" nice_line
+	replace_range(beg,end,str)
+	select(beg,beg+length(str))
+	mk_process_comment(mk_find_comment(1),3)
+}
+
+#Copy and comment a selection
+define mk_copy_and_comment_block
+{
+	saved_cursor=$cursor
+	if ($selection_start==-1)
+	{
+		select_line()
+	}
+
+	beg=$selection_start
+	end=$selection_end
+	
+	str_beg=""
+	if( beg==end ) return
+	if( get_range(end-1,end) !="\n")
+	{
+		if(end==$text_length) str_beg="\n"
+		if(get_range(end,end+1)=="\n") str_beg="\n"
+	}
+	
+	str = str_beg get_range(beg,end)
+	mk_swap_comment(1)
+	end = $selection_end
+	replace_range(end,end,str)
+	set_cursor_pos(saved_cursor+length(str))
+}
+
+#Copy a selection
+define mk_copy_block
+{
+	saved_cursor=$cursor
+	if ($selection_start==-1)
+	{
+		select_line()
+	}
+	
+	beg=$selection_start
+	end=$selection_end
+	
+	str_beg=""
+	if( beg==end ) return
+	if( get_range(end-1,end) !="\n")
+	{
+		if(end==$text_length) str_beg="\n"
+		if(get_range(end,end+1)=="\n") str_beg="\n"
+	}
+	
+	str = str_beg get_range(beg,end)
+	replace_range(end,end,str)
+	set_cursor_pos(saved_cursor+length(str))
+}
+

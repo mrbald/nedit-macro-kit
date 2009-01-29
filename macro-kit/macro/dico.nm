@@ -1,0 +1,83 @@
+##################################################
+# Frank Perbet - 2002/04/14                      #
+# object: dico stuff (used by completion)        #
+##################################################
+
+
+
+# add posible completion from dico
+# see load_fist to init $mk_dico properly
+define mk_dico_match
+{
+	automatic_dico_list=""
+	if ("all" in $mk_dico) automatic_dico_list = $mk_dico["all"]
+	if ($language_mode in $mk_dico) automatic_dico_list = automatic_dico_list " " $mk_dico[$language_mode]
+	if (automatic_dico_list=="") return
+	tmp=mk_ssc($1)
+	command="cd  " mk_ssc($dico_path) " ; " $mk_uc["grep"] " -h -e ^" tmp " " automatic_dico_list
+	res=shell_command(command,"")
+
+	if($shell_cmd_status==0) return res
+	else return ""
+}
+
+# add posible completion from dico
+# see load_fist to init $mk_dico properly
+define mk_open_specific_dico
+{
+	automatic_dico_list=""
+	if ("all" in $mk_dico) automatic_dico_list = $mk_dico["all"]
+	if ($language_mode in $mk_dico) automatic_dico_list = automatic_dico_list " " $mk_dico[$language_mode]
+	if (automatic_dico_list=="") return
+	
+	if(search_string(automatic_dico_list," ",0)!=-1)
+		automatic_dico_list=replace_in_string(automatic_dico_list," ","\n")
+	
+	tmp=list_dialog("Which dico do you want to open:",automatic_dico_list,"ok","all","dismiss")
+	
+	if((tmp!="")&&($list_dialog_button==1)) 
+	{
+		mk_open_file(tmp,$dico_path)
+		return
+	}
+	
+	if($list_dialog_button==2)
+	{
+		array_dico=split(automatic_dico_list,"\n")
+		for(d in array_dico)
+		{
+			mk_open_file(elem,$dico_path)
+			return
+		}
+	}
+}
+
+# list all dico
+define mk_open_dico
+{
+	cmd = "cd  " mk_ssc($dico_path) ";" $mk_uc["ls"] " *.dico"
+	dicos_list=mk_shell_command(cmd)
+	
+	tmp=list_dialog("Which dico do you want to open:",dicos_list,"ok","dismiss")
+	
+	if((tmp!="")&&($list_dialog_button==1)) 
+	{
+		mk_open_file(tmp,$dico_path)
+		return
+	}
+}
+
+
+#initialistion of completion
+define mk_init_dico
+{	
+	#chemin ou sont les dicos:
+	$dico_path=mk_pathname($MK_ENV_VAR["NEDIT_MK"] "/customize/dicos/")
+	
+	if(mk_test_path($dico_path)=="")
+	{
+		mk_add_error_line("Warning: completion.nm: cannot find directory " $dico_path)
+	}
+}
+
+mk_init_dico()
