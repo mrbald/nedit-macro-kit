@@ -14,7 +14,3 @@ nedit*windowsMenu.closePane.accelerator:
 nedit*windowsMenu.closePane.acceleratorText:       
 nedit.backlightCharTypes:  0-8,10-31,127:#aaaaff;9:#c0c0c0;32-126:#cccccc;160-255:#cccccc;128-159:#aaaaff
 
-! xterm
-xterm*saveLines: 100000
-xterm*font: -b&h-lucidatypewriter-medium-r-normal-sans-18-180-75-75-m-110-iso8859-1
-

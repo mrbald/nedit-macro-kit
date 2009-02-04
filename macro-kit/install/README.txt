@@ -4,8 +4,8 @@ So you might want to start with:
 2) mv ~/.nedit ~/.nedit.save
 
 Installation:
-1) tar xcvf dot_nedit.tar.gz
-2) mv dot_nedit .nedit
+1) tar xcvf nedit-macro-kit.tar.gz
+2) mv dotnedit-macro-kit .nedit
 
 Optional:
 3) cp .nedit/macro-kit/install/dot_Xdefaults ~/.Xdefaults
