@@ -16,5 +16,5 @@ for root, dirs, files in os.walk('dot_nedit'):
 		svn2remove.append(os.path.join(root,".svn"))
 for d in svn2remove:
 	shutil.rmtree(d)
-subprocess.Popen(["tar","zcvf","dot_nedit.tar.gz","dot_nedit"]).communicate()
+subprocess.Popen(["tar","zcvf","nedit-macro-kit.tar.gz","dot_nedit"]).communicate()
 tryrmtree("dot_nedit")

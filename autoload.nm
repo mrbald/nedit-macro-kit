@@ -1,3 +1,2 @@
 # load macro-kit
 load_macro_file( getenv("HOME")"/.nedit/macro-kit/macro/mk.nm")
- 

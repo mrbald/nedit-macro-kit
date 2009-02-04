@@ -1,4 +1,5 @@
 # File name database for NEdit Open Previous command
+/home/fperbet/.nedit/macro-kit/install/createzip.py
 /tmp/zzz_engine_0__cvg-2win_fperbet.tmp
 /tmp/zzz_output_0__cvg-2win_fperbet.tmp
 /cygdrive/k/sdk/vision/vision.vcproj
@@ -28,4 +29,3 @@
 /home/fperbet/.nedit/macro-kit/macro/load_all_macros.nm
 /home/fperbet/.nedit/macro-kit/macro/line_jumping_parameters.nm
 /home/fperbet/.nedit/macro-kit/macro/line_jumping.nm
-/home/fperbet/.nedit/macro-kit/macro/init.nm
