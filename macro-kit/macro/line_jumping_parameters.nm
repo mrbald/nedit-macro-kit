@@ -142,6 +142,9 @@ $mk_goto_lines["Java:import"] = "^import\\s+((?#file:).*?)\\s*;\\s*$\n?"
 $mk_goto_lines["txtPerso:ddd"] = "\\*ddd:((?#action:).*?)\\*"
 
 # python from
+$mk_goto_lines["glsl:include"] = "^\\s*#special\\s+include\\s+\"((?#file:include).*)\"\\s*$\n?"
+
+# python from
 $mk_goto_lines["XML:match"] = "\\<((?#end:)/)?((?#id:)\\l[0-9a-zA-Z_-]*?)(?:\\s+.*?)?\\>"
 
 
