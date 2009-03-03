@@ -84,7 +84,7 @@ $mk_goto_lines["LaTeX:figfile:0"] = "^\\\\(?:figfile)\\{((?#file:.fig).*)\\}\\s*
 $mk_goto_lines["LaTeX:bib:0"] = "^\\\\\(?:bibliography)\\{((?#file:.bib).*)\\}\\s*$\n?"
 
 # latex warning
-$mk_goto_lines["External[LaTeX]:warning:1"] = "((?#file:texerr))^LaTeX Warning: (?:.+?) on input line ((?#pos:)(?:[0-9])+)\.$\n?"
+$mk_goto_lines["External[LaTeX]:warning:1"] = "((?#file:texerr))^LaTeX Warning: (?:.+?) on input line ((?#pos:)(?:[0-9])+)\.\\s*$\n?"
 
 # latex input
 $mk_goto_lines["External[LaTeX]:error"] = "((?#file:texerr))^! .*(?:.*\n)*?l\\.((?#pos:)[0-9]+).*$\n"
