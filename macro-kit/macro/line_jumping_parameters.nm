@@ -236,12 +236,14 @@ define mk_linejump_preprocess
 	}
 	else if(local_param["fileExt"]=="texerr")
 	{
-		n=search("\\(.*\\.(?:tex)",$cursor,"regex","backward")
+		n=search("\\(.*\\.(?:tex)\\s*$",$cursor,"regex","backward")
 		if(n==-1)
 		{
 			return local_param
 		}
-		local_param["file"]=get_range(n+1,$search_end)
+		filename = get_range(n+1,$search_end)
+		filename=replace_in_string(filename,"(^\\s+)|(\\s+$)","","regex")
+		local_param["file"]=filename
 	}
 	
 	return local_param
