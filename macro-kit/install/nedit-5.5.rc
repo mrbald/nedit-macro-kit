@@ -1233,6 +1233,7 @@ nedit.highlightPatterns: Ada:Default\n\
 		BackTicks:"`":"`":"\\n":String2::\n\
 		String:"""":""""::String1::\n\
 		GlobalProcedures:"global|proc":::Storage Type::\n\
+		keyword:"<(if|then|else|for|in|return)>":::Keyword::\n\
 	}\n\
 	Mk Expander:3:0{\n\
 		comment:"^#.*":::Comment::\n\
@@ -1258,6 +1259,31 @@ nedit.highlightPatterns: Ada:Default\n\
 		SubString:"\\{":"}"::String2:BracketString:\n\
 		Ref:"\\1":""::Text Key:Contents:C\n\
 		Comment:"%":"$"::Text Comment::D\n\
+	}\n\
+	glsl:1:0{\n\
+		comment:"/\\*":"\\*/"::Comment::\n\
+		cplus comment:"//":"$"::Comment::\n\
+		string:"L?""":"""":"\\n":String::\n\
+		preprocessor line:"^\\s*#\\s*(extension|special|include|define|if|ifn?def|line|error|else|endif|elif|undef|pragma|warning|version)>":"$"::Preprocessor::\n\
+		string escape chars:"\\\\(.|\\n)":::String1:string:\n\
+		preprocessor esc chars:"\\\\(.|\\n)":::Preprocessor1:preprocessor line:\n\
+		preprocessor comment:"/\\*":"\\*/"::Comment:preprocessor line:\n\
+		preproc cplus comment:"//":"$"::Comment:preprocessor line:\n\
+		preprocessor keywords:"<__(LINE|FILE|DATE|TIME|STDC)__>":::Preprocessor::\n\
+		character constant:"L?'":"'":"[^\\\\][^']":Character Const::\n\
+		float constant:"<((0(x|X)[0-9a-fA-F]*)|(([0-9]+\\.[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?>":::Numeric Const2::D\n\
+		integer constant:"<((0(x|X)[0-9a-fA-F]*)|([0-9]+)((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?>":::Numeric Const::D\n\
+		storage keyword:"<(in|out|inout|void|main|const|unsigned|signed|float|int|bool|struct|union)>":::Storage Type::D\n\
+		storage keyword perso:"<(vec[0-9]+|ivec[0-9]+|bvec[0-9]+|uvec[0-9]+|mat[0-9]|uniform|attribute|varying)>":::Storage Type::D\n\
+		keyword:"<(return|goto|if|else|case|default|switch|break|continue|while|do|for|true|false)>":::Keyword::D\n\
+		braces:"[{}]":::Keyword::D\n\
+		buitin:"<gl_\\w+>":::Text Key1::\n\
+		function:"<(radians|degrees|sin|cos|tan|asin|acos|atan|pow|exp|log|exp2|log2|sqrt|inversesqrt|abs|sign|floor|ceil|fract|mod|min|max|clamp|mix|step|smoothstep|length|distance|dot|cross|normalize|ftransform|faceforward|MatrixCompMult|lessThan|lessThanEqual|greaterThan|greaterThanEqual|equal|notEqual|any|all|not|shadow1D|shadow1DProj|shadow1DLod|shadow1DProjLod|shadow2D|shadow2DProj|shadow2DLod|shadow2DProjLod|dFdx|dFdy|fwidth|noise1|noise2|noise3|noise4)>":::Pointer::\n\
+		attribute:"<a_\\w+>":::String2::\n\
+		varying:"<v_\\w+>":::Identifier2::\n\
+		texture:"<(texture1D|texture2D|texture3D|textureCube|texelFetch1D|texelFetch2D|texelFetch3D|textureSize1D|textureSize2D)(Rect|Array)?(Proj)?(Lod)?>":::Pointer::\n\
+		sampler:"<[ui]?sampler[123]D(Rect|Array)?>":::Storage Type::\n\
+		const:"<c_\\w+>":::Text Arg1::\n\
 	}
 nedit.languageModes: 	Ada:.ada .ad .ads .adb .a:::::::\n\
 	Awk:.awk:::::::\n\
@@ -1290,7 +1316,8 @@ nedit.languageModes: 	Ada:.ada .ad .ads .adb .a:::::::\n\
 	Mk Expander:expander.data::None:None:::",\\`'!|@#%^&*()-=+{}[]"":;<>?~":\n\
 	txtPerso:.txt:"# *txtPerso"::::::\n\
 	Mel:.mel::Smart:None::::\n\
-	BibTeX:.bib:::::::
+	BibTeX:.bib:::::::\n\
+	glsl:glsl:::::::
 nedit.styles: 	Plain:black:Plain\n\
 	Comment:gray50:Italic\n\
 	Comment2:gray40:Italic\n\
@@ -1327,7 +1354,7 @@ nedit.styles: 	Plain:black:Plain\n\
 nedit.smartIndentInit: 	C++:Default\n\
 	Python:Default\n\
 	Matlab:Default
-nedit.smartIndentInitCommon: 	load_macro_file($MK_ENV_VAR["NEDIT_HOME"] "/perso/smart_indent.nm")\n
+nedit.smartIndentInitCommon: Default
 nedit.autoWrap: Continuous
 nedit.wrapMargin: 0
 nedit.autoIndent: Auto
@@ -1337,7 +1364,7 @@ nedit.saveOldVersion: False
 nedit.showMatching: Range
 nedit.matchSyntaxBased: True
 nedit.highlightSyntax: True
-nedit.backlightChars: True
+nedit.backlightChars: False
 nedit.searchDialogs: False
 nedit.beepOnSearchWrap: False
 nedit.retainSearchDialogs: False

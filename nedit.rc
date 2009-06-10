@@ -1397,7 +1397,7 @@ nedit.boldHighlightFont: -b&h-lucidatypewriter-bold-r-normal-sans-18-180-75-75-m
 nedit.italicHighlightFont: -b&h-lucidatypewriter-medium-o-normal-sans-18-180-75-75-m-110-iso8859-1
 nedit.boldItalicHighlightFont: -b&h-lucidatypewriter-bold-o-normal-sans-18-180-75-75-m-110-iso8859-1
 nedit.textFgColor: #000000
-nedit.textBgColor: #ccccda
+nedit.textBgColor: #cccccc
 nedit.selectFgColor: #000000
 nedit.selectBgColor: #eeeeee
 nedit.hiliteFgColor: #000000
