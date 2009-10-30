@@ -125,7 +125,7 @@ $mk_fnkey_cmd["default"][3]="make clean"  #F11
 $mk_fnkey_cmd["default"][4]="make clean all" #F12
 $mk_fnkey_cmd["default"][5]="" #ALT+F9
 $mk_fnkey_cmd["default"][6]="" #ALT+F10
-$mk_fnkey_cmd["default"][7]="" #ALT+F11
+$mk_fnkey_cmd["default"][7]="cat %n" #ALT+F11
 $mk_fnkey_cmd["default"][8]="find ." #ALT+F12
 
 
@@ -162,6 +162,7 @@ $mk_comment["MSDOS"]="REM "
 $mk_comment["default"]="#"
 $mk_comment["Lua"]="--"
 $mk_comment["glsl"]="//,/*...*/"
+$mk_comment["Fortran"]="!"
 
 #way of handle space and tab with comment macros:
 #from 1 to 3:

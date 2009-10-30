@@ -147,6 +147,8 @@ $mk_goto_lines["glsl:include"] = "^\\s*#special\\s+include\\s+\"((?#file:include
 # python from
 $mk_goto_lines["XML:match"] = "\\<((?#end:)/)?((?#id:)\\l[0-9a-zA-Z_-]*?)(?:\\s+.*?)?\\>"
 
+# python from
+$mk_goto_lines["External[Fortran]:error"] = "^((?#file:)[^:]+?):((?#pos:)[0-9]+)\\.((?#column:)[0-9]+):$\n?"
 
 # init
 mk_init_goto_line()

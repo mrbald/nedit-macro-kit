@@ -4,6 +4,29 @@
 ##################################################
 
 
+define mk_execute_finalize_cmd
+{
+	if($n_args>=1) command=$1
+	else command=$mk_last_command
+	
+	if(command!="")
+	{
+		tmp = replace_in_string(command,"%n",$file_name,"literal")
+		if(tmp!="") command = tmp
+		tmp = replace_in_string(command,"%p",$file_path,"literal")
+		if(tmp!="") command = tmp
+		tmp = replace_in_string(command,"%pn",$file_path $file_name,"literal")
+		if(tmp!="") command = tmp
+
+		return command
+	}
+	else
+	{
+		return ""
+	}
+}
+
+
 define mk_get_predef_cmd
 {
 	num=$1
@@ -70,6 +93,8 @@ define mk_execute_in_buffer_list
 	}
 }
 
+
+
 # execute the last command
 define mk_execute_in_buffer_last
 {
@@ -78,15 +103,8 @@ define mk_execute_in_buffer_last
 
 	if(command!="")
 	{
-		tmp = replace_in_string(command,"%n",$file_name,"literal")
-		if(tmp!="") command = tmp
-		tmp = replace_in_string(command,"%p",$file_path,"literal")
-		if(tmp!="") command = tmp
-		tmp = replace_in_string(command,"%pn",$file_path $file_name,"literal")
-		if(tmp!="") command = tmp
-
 		$mk_last_command=command
-		mk_extended_execute_in_buffer(command,mk_action_host(),"External")
+		mk_extended_execute_in_buffer(mk_execute_finalize_cmd(command),mk_action_host(),"External")
 	}
 	else
 	{
@@ -174,7 +192,7 @@ define mk_execute_predefined_unix_command
 		if(command=="") return""
 		
 		lang="External["mk_main_language()"]"
-		mk_extended_execute_in_buffer(command,host,lang)
+		mk_extended_execute_in_buffer(mk_execute_finalize_cmd(command),host,lang)
 	}
 }
 
