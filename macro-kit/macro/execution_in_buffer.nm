@@ -11,11 +11,11 @@ define mk_execute_finalize_cmd
 	
 	if(command!="")
 	{
+		tmp = replace_in_string(command,"%pn",$file_path $file_name,"literal")
+		if(tmp!="") command = tmp
 		tmp = replace_in_string(command,"%n",$file_name,"literal")
 		if(tmp!="") command = tmp
 		tmp = replace_in_string(command,"%p",$file_path,"literal")
-		if(tmp!="") command = tmp
-		tmp = replace_in_string(command,"%pn",$file_path $file_name,"literal")
 		if(tmp!="") command = tmp
 
 		return command
